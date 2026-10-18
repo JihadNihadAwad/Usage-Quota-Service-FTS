@@ -1,0 +1,15 @@
+# Keep build contexts small; local-only material (working notes,
+# secrets) stays out of every image.
+.git
+node_modules
+dist
+dist-client
+coverage
+temp
+.env
+.env.*
+*.md
+performance
+tests
+.dockerignore
+docker-compose.yml

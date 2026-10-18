@@ -21,7 +21,9 @@ const api = new UsageApi(USAGE_API_URL);
 const app = express();
 app.disable('x-powered-by');
 
-const publicDir = fileURLToPath(new URL('./public', import.meta.url));
+// Static dir: STATIC_DIR lets the container point at the copied assets;
+// dev falls back to the source tree next to this file.
+const publicDir = process.env.STATIC_DIR ?? fileURLToPath(new URL('./public', import.meta.url));
 app.use(express.static(publicDir));
 
 // Scenario catalog + current run status for the page.

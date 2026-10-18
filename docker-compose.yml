@@ -1,12 +1,12 @@
-# Database only for now; the api/client/k6 services join in their
-# own commits - this file grows into the full stack.
+# The full stack: `docker compose up --build` is the only setup step.
+#   - db      postgres:17-alpine (healthcheck-gated, data on a named volume)
+#   - api     node:24-alpine, entrypoint = migrate -> seed -> listen
+#   - client  demo web app, talks to api over the compose network
+# Opt-in profiles (never start with a plain `up`):
+#   - test    db-test on localhost:5433 (integration suite)
+#   - perf    k6 load-test runner (opt-in)
 #
-#   docker compose up -d db          # dev database (localhost:5432)
-#   docker compose --profile test up -d db-test   # integration db (localhost:5433)
-#
-# db-test is behind the `test` profile so a plain `docker compose up` never
-# starts it. Data lives on named volumes (ext4 inside the WSL2 VM - decision
-# #16), so it survives `docker compose down` and container replacement.
+# The host dev flow (`npm run dev`) still maps db's 5432 to localhost.
 
 name: fts
 
@@ -27,6 +27,64 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+    networks:
+      - fts_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fts-api
+    environment:
+      PORT: 3000
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://postgres:postgres@db:5432/fts
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # busybox wget: non-zero exit on any 4xx/5xx, so a not-ready (503)
+      # container correctly reports unhealthy.
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/readyz']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+    networks:
+      - fts_net
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: fts-client
+    environment:
+      CLIENT_PORT: 3001
+      USAGE_API_URL: http://api:3000/v1
+      STATIC_DIR: /app/public
+    ports:
+      - '3001:3001'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3001/api/scenarios']
+      interval: 5s
+      timeout: 3s
+      retries: 12
       start_period: 5s
     networks:
       - fts_net

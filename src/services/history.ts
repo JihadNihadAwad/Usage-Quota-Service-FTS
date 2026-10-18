@@ -1,4 +1,4 @@
-import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { requests } from '../db/schema.js';
 import { ApiError } from '../http/errors.js';
@@ -69,7 +69,13 @@ export async function listHistory(
     .select()
     .from(requests)
     .where(and(...conditions))
-    .orderBy(desc(requests.createdAt), desc(requests.id))
+    // DESC NULLS LAST is not decoration: the recent-history indexes are
+    // declared (..., created_at DESC NULLS LAST, id DESC NULLS LAST), and a
+    // plain DESC means NULLS FIRST to Postgres - a different sort order,
+    // which blocked index-backed ordering entirely (every page did a seq
+    // scan + top-N sort of the account's whole ledger). Caught via EXPLAIN
+    // ANALYZE; before/after in performance/results/.
+    .orderBy(sql`${requests.createdAt} desc nulls last`, sql`${requests.id} desc nulls last`)
     .limit(filters.limit + 1);
 
   const hasMore = rows.length > filters.limit;

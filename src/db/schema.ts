@@ -15,7 +15,7 @@ import {
   uuid,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import type { Rules } from './predefined.js';
+import type { Rules } from '../domain/rules/schemas.js';
 
 // Schema ground rules:
 // - The database enforces what it structurally can: positivity, ownership,

@@ -1,1 +1,0 @@
-# domain: rules/ (registry + one file per rule), decision.ts, month.ts, precedence.ts — pure, no IO

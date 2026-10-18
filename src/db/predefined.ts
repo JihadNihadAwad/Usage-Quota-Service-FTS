@@ -1,13 +1,11 @@
+import type { Rules } from '../domain/rules/schemas.js';
+
 // The predefined plans (brief: ready-to-use plans present "when the service starts").
 // The ids are fixed, deliberately memorable UUIDs so the README,
 // the demo client, and psql can hard-reference them. The seed upserts by id,
 // so these are stable forever.
 
-export type Rules = {
-  monthly_allowance?: number;
-  max_per_request?: number;
-  monthly_request_cap?: number;
-};
+export type { Rules };
 
 export type PredefinedPlan = {
   id: string;

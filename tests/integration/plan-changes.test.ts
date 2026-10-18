@@ -192,4 +192,85 @@ describe('plan changes preserve usage and apply to new requests', () => {
       { request_id: 'pc-10', user_rules: { monthly_allowance: 20, max_per_request: 20 } },
     ]);
   });
+
+  it('a plan flip landing mid-storm never corrupts accounting (every request judged by exactly one rule set)', async () => {
+    const { key, accountId } = await bootstrapAccount(agent, 'DocuFlow');
+    // Two account plans with distinguishable allowances.
+    const tight = await createCustomPlan(agent, key, 'FlipTight', 'account', {
+      monthly_allowance: 40,
+      max_per_request: 100,
+    });
+    const loose = await createCustomPlan(agent, key, 'FlipLoose', 'account', {
+      monthly_allowance: 60,
+      max_per_request: 100,
+    });
+    const patchTo = async (planId: string) =>
+      agent
+        .patch('/v1/account')
+        .set('Authorization', `Bearer ${key}`)
+        .send({ account_plan_id: planId });
+    await patchTo(tight);
+
+    const alice = await createUser(agent, key, 'alice');
+    const drain = async () => {
+      const usage = await getJson('/v1/usage', key);
+      return usage;
+    };
+    expect((await drain()).used_units).toBe(0);
+
+    // 30 concurrent requests of 2 units (60 demanded vs 40 tight / 60 loose),
+    // with the account plan flipped tight -> loose -> tight while the storm
+    // is in flight. Whatever interleaving happens, each request must be
+    // judged atomically under ONE of the two rule sets.
+    const storm = Promise.all(
+      Array.from({ length: 30 }, (_, i) => consume(key, alice.id, `flip-${i}`, 2)),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const flip1 = await patchTo(loose);
+    expect(flip1.status).toBe(200);
+    const flip2 = await patchTo(tight);
+    expect(flip2.status).toBe(200);
+    const results = await storm;
+
+    for (const res of results) expect(res.status).toBe(200);
+    const accepted = results.filter((r) => r.body.accepted === true);
+    const used = accepted.reduce((sum, r) => sum + r.body.units_consumed, 0);
+
+    // Global invariants: the API totals equal the sum of accepted charges.
+    const usage = await getJson('/v1/usage', key);
+    expect(usage.used_units).toBe(used);
+    const userUsage = await getJson(`/v1/users/${alice.id}/usage`, key);
+    expect(userUsage.used_units).toBe(used);
+
+    // The strong check, straight from the ledger: walking rows in commit
+    // order, the running total (which is exactly what each request saw as
+    // "used" when it was decided) can never exceed the allowance snapshot
+    // carried by the row that was accepted. A request judged under `tight`
+    // when the counter was already at 40+ MUST have been rejected; mixing
+    // the two rule sets mid-request would violate this immediately.
+    const { rows } = await pool.query(
+      `select id, accepted, units_consumed,
+              account_rules->>'monthly_allowance' as allowance
+       from requests where account_id = $1 order by id asc`,
+      [accountId],
+    );
+    expect(rows.length).toBe(30);
+    const allowances = new Set(rows.map((r: { allowance: string }) => Number(r.allowance)));
+    expect(allowances).toEqual(new Set([40, 60])); // both rule sets really were in play
+
+    let running = 0;
+    for (const row of rows as Array<{
+      accepted: boolean;
+      units_consumed: string;
+      allowance: string;
+    }>) {
+      expect([40, 60]).toContain(Number(row.allowance));
+      if (row.accepted) {
+        running += Number(row.units_consumed);
+        expect(running).toBeLessThanOrEqual(Number(row.allowance));
+      }
+    }
+    expect(running).toBe(used);
+    expect(used).toBeLessThanOrEqual(60); // never above the larger allowance
+  });
 });

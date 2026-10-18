@@ -12,11 +12,12 @@
 // Run: npm run bench:contention-account
 
 import { check } from 'k6';
-import { consume, consumeChecks, requestId, state, summary } from './lib.js';
+import { consume, consumeChecks, requestId, state, summary, TREND_STATS } from './lib.js';
 
 export const options = {
   vus: 100,
   duration: '45s',
+  summaryTrendStats: TREND_STATS,
   thresholds: {
     http_req_failed: ['rate<0.01'],
     checks: ['rate==1'],

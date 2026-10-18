@@ -16,6 +16,10 @@ export const BASE_URL = (__ENV.BASE_URL ?? 'http://localhost:3000') + '/v1';
 // at bundle time and shared with every scenario through this import.
 export const state = JSON.parse(open(__ENV.STATE_FILE ?? '/perf/loadtest-state.json'));
 
+// Percentiles reported in every stage's console summary and exported JSON
+// (p99 included — tail latency is part of the evidence).
+export const TREND_STATS = ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'];
+
 export function headers(key) {
   return {
     headers: {
@@ -27,7 +31,8 @@ export function headers(key) {
 
 /**
  * One consume call. A quota REJECTION is an HTTP 200 with accepted:false in
- * the body, so http_req_failed only counts transport/protocol
+ * the body, so http_req_failed only
+ * counts transport/protocol
  * failures - the `checks` carry the semantic assertions.
  */
 export function consume(key, userId, requestId, units) {

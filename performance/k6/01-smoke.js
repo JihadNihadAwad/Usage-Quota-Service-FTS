@@ -9,11 +9,12 @@
 
 import http from 'k6/http';
 import { check } from 'k6';
-import { BASE_URL, consume, headers, state, summary } from './lib.js';
+import { BASE_URL, consume, headers, state, summary, TREND_STATS } from './lib.js';
 
 export const options = {
   vus: 1,
   iterations: 1,
+  summaryTrendStats: TREND_STATS,
   thresholds: {
     checks: ['rate==1'],
     http_req_failed: ['rate==0'],

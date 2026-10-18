@@ -2,7 +2,7 @@
 //
 //   npm run bench:invariants
 //
-// Talks straight to the compose db (localhost:5432) and asserts, for the
+// Talks straight to the compose db (localhost:5432) and asserts, for EVERY
 // loadtest account and the current UTC month:
 //   1. account counter == sum of user counters == sum of accepted ledger units
 //   2. every rejected ledger row consumed nothing
@@ -20,6 +20,8 @@ const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@l
 interface State {
   account: { id: string; name: string; key: string };
   users: string[];
+  account2: { id: string; name: string; key: string };
+  users2: string[];
 }
 
 const month = `${new Date().toISOString().slice(0, 7)}-01`;
@@ -33,9 +35,8 @@ async function one(query: string, params: unknown[]): Promise<Record<string, unk
   return row as Record<string, unknown>;
 }
 
-async function main(): Promise<void> {
-  const state = JSON.parse(readFileSync(STATE_FILE, 'utf8')) as State;
-  const accountId = state.account.id;
+/** All invariant checks for one account. Prints a line per finding. */
+async function checkAccount(name: string, accountId: string): Promise<boolean> {
   const params = [accountId, month];
 
   const accountRow = await pool.query(
@@ -90,7 +91,7 @@ async function main(): Promise<void> {
   );
   const overAllowance = Number(overRow.over);
 
-  console.log(`[invariants] account ${state.account.name} (${accountId}), month ${month}`);
+  console.log(`[invariants] account ${name} (${accountId}), month ${month}`);
   console.log(
     `[invariants] account counter: ${accountUsed} / sum of user counters: ${userSum} / accepted ledger units: ${ledgerSum} (${acceptedCount} accepted requests)`,
   );
@@ -105,10 +106,22 @@ async function main(): Promise<void> {
 
   if (failures.length > 0) {
     for (const f of failures) console.error(`[invariants] FAIL: ${f}`);
+    return false;
+  }
+  console.log(`[invariants] PASS - counters, ledger, and allowances agree`);
+  return true;
+}
+
+async function main(): Promise<void> {
+  const state = JSON.parse(readFileSync(STATE_FILE, 'utf8')) as State;
+  if (state.account2 === undefined) {
+    console.error('[invariants] state file predates the second account - run npm run bench:seed');
     process.exitCode = 1;
     return;
   }
-  console.log(`[invariants] PASS - counters, ledger, and allowances agree`);
+  const first = await checkAccount(state.account.name, state.account.id);
+  const second = await checkAccount(state.account2.name, state.account2.id);
+  process.exitCode = first && second ? 0 : 1;
 }
 
 main()

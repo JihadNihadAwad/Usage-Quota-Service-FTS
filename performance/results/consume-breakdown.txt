@@ -1,0 +1,37 @@
+# What dominates a consume: per-statement round trips, not database work
+
+Measured 2026-10-19, inside the compose network (api container -> db
+container), 500 queries each on one pooled connection:
+
+```
+$ docker compose exec api node -e "... 500x select 1 / small row ..."
+round-trip select 1:   0.278 ms
+round-trip small row:  0.185 ms
+```
+
+An accepted consume for the loadtest plans executes 12 statements
+(fast-path idempotency check, user+plan load, account+plan load, two lazy
+counter-row inserts, two locked reads, the in-transaction idempotency
+re-check, the monthly-request-cap count, two UPDATE ... RETURNING, and the
+ledger insert). At ~0.2 ms per round trip that is ~2.5 ms of pure
+api<->db latency before any database work at all - and the EXPLAIN captures
+(explain-queries.txt) show the database's own execution time for these
+statements is 0.01-0.9 ms each, ~2 ms in total.
+
+The serialized section of a consume measured ~6.1 ms (stage 03/04 ceiling of
+~163/s). So roughly: ~2.5 ms round trips + ~2 ms statement execution/driver
+overhead + lock handoff. The path is round-trip bound, not CPU or I/O
+bound - which is also why adding VUs cannot raise the ceiling (stage 04).
+
+What could be done about it, and why it was not done:
+
+- Batching the 12 statements into one or two round trips (a PL/pgSQL block
+  or a few CTEs) would cut the serialized section to ~1-2 ms and raise the
+  per-account ceiling toward 500-1000 decisions/s.
+- Rejected because each statement in src/services/consume.ts exists to make
+  the locking protocol inspectable one statement at a time - a stored
+  procedure moves the correctness heart out of the codebase and into the
+  database, where it is harder to test, review, and trace.
+- The measured ceiling (~14M accepted requests/month for one account) is
+  more than two orders of magnitude beyond the largest predefined plan
+  (Pro: 100,000 units/month), so the trade buys nothing the product needs.

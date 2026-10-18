@@ -9,7 +9,16 @@
 
 import http from 'k6/http';
 import { check } from 'k6';
-import { BASE_URL, consume, consumeChecks, headers, requestId, state, summary } from './lib.js';
+import {
+  BASE_URL,
+  consume,
+  consumeChecks,
+  headers,
+  requestId,
+  state,
+  summary,
+  TREND_STATS,
+} from './lib.js';
 
 export const options = {
   scenarios: {
@@ -38,6 +47,7 @@ export const options = {
     http_req_failed: ['rate<0.01'],
     checks: ['rate==1'],
   },
+  summaryTrendStats: TREND_STATS,
 };
 
 export const handleSummary = summary('05-mixed');

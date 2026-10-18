@@ -7,11 +7,21 @@
 
 import http from 'k6/http';
 import { check } from 'k6';
-import { BASE_URL, consume, consumeChecks, headers, requestId, state, summary } from './lib.js';
+import {
+  BASE_URL,
+  consume,
+  consumeChecks,
+  headers,
+  requestId,
+  state,
+  summary,
+  TREND_STATS,
+} from './lib.js';
 
 export const options = {
   vus: 2,
   duration: '30s',
+  summaryTrendStats: TREND_STATS,
   thresholds: {
     http_req_failed: ['rate<0.01'],
     http_req_duration: ['p(95)<50'],

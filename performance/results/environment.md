@@ -1,9 +1,12 @@
 # Benchmark environment
 
-All numbers in this directory were produced on this machine on 2026-10-18,
-with the stack exactly as `docker compose up --build` builds it (api + db on
-the compose bridge network, k6 in the `perf` profile talking to
-`http://api:3000` over that network).
+All numbers in this directory were produced on this machine on 2026-10-18
+(the original run set: stages 01-05, pre/post history-index fix) and
+2026-10-19 (the final run set: all six stages re-run with p99 reporting,
+plus the round-trip probe), with the stack exactly as
+`docker compose up --build` builds it (api + db on the compose bridge
+network, k6 in the `perf` profile talking to `http://api:3000` over that
+network).
 
 ## Host
 
@@ -32,11 +35,13 @@ the compose bridge network, k6 in the `perf` profile talking to
 
 ## Dataset at the end of the runs
 
-- 1 load-test account ("Loadtest Co"), 100 users, all on one custom user plan
-  with all three rules enabled (so every consume runs the request-cap count)
-- 54,032 accepted requests in the load-test account's ledger (+77 rows from
-  demo/probe accounts: 54,109 total rows in `requests`)
-- 130 users, 21 accounts in the database overall
+- TWO independent load-test accounts ("Loadtest Co", "Loadtest Co 2"), 100
+  users each, all on per-account custom plans with all three rules enabled
+  (so every consume runs the request-cap count)
+- 91,374 accepted requests across the two loadtest ledgers (87,185 + 4,189)
+  after the 2026-10-19 run set (91,451 rows total in `requests`, including
+  demo/probe accounts)
+- 230 users, 22 accounts in the database overall
 
 ## Stage parameters
 
@@ -47,7 +52,9 @@ the compose bridge network, k6 in the `perf` profile talking to
 | 03-contention-user | 25 | 30 s | all requests for ONE user |
 | 04-contention-account | 100 | 45 s | 100 users, one account row |
 | 05-mixed | ramp 0→10→50→0 | 100 s | 70/15/10/5 read mix + one plan PATCH at t+50s |
+| 06-multi-account | 100 | 30 s | 50 VUs per account, two independent accounts |
 
-Every stage was followed by `npm run bench:invariants` (counters == ledger),
-and every run passed. Latency numbers on a laptop under Docker are
-indicative, not absolute; the relationships between stages are the significant results.
+Every stage was followed by `npm run bench:invariants` (counters == ledger,
+for BOTH loadtest accounts), and every run passed. Latency numbers on a
+laptop under Docker are indicative, not absolute; the *relationships*
+between stages are the significant results.

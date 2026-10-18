@@ -7,19 +7,33 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main>
-      <header>
-        <h1>Usage metering & quota service — demo client</h1>
-        <p class="sub">
-          DocuFlow (the calling application) keeps its API key on its own server — this page never
-          sees it. Buttons run in story order; “Run all” starts a fresh account and plays the whole
-          thing.
-        </p>
-        <p id="status" class="status">loading…</p>
-      </header>
-      <nav id="buttons" class="buttons"></nav>
-      <section id="cards" class="cards"></section>
-    </main>
+    <div class="layout">
+      <main>
+        <header>
+          <h1>Usage metering & quota service — demo client</h1>
+          <p class="sub">
+            DocuFlow (the calling application) keeps its API key on its own server — this page never
+            sees it. Every step shows the exact API request it made. “Run all” plays every scenario
+            from a fresh account; the checks below verify isolation, retries, and rules
+            without touching the counters.
+          </p>
+          <p id="status" class="status">loading…</p>
+        </header>
+
+        <h2 class="section-title">Scenarios</h2>
+        <nav id="buttons" class="buttons"></nav>
+
+        <h2 class="section-title">Checks</h2>
+        <nav id="check-buttons" class="buttons checks"></nav>
+
+        <section id="cards" class="cards"></section>
+      </main>
+
+      <aside id="panel" class="panel">
+        <h2>Live state</h2>
+        <div id="panel-body" class="panel-body"><p class="muted">loading…</p></div>
+      </aside>
+    </div>
     <script src="app.js"></script>
   </body>
 </html>

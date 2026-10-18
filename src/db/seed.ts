@@ -30,15 +30,13 @@ export async function seedPredefinedPlans(db: Db = getDb()): Promise<SeedReport>
     const [existing] = await db.select().from(plans).where(eq(plans.id, plan.id)).limit(1);
 
     if (!existing) {
-      await db
-        .insert(plans)
-        .values({
-          id: plan.id,
-          accountId: null,
-          name: plan.name,
-          scope: plan.scope,
-          rules: plan.rules,
-        });
+      await db.insert(plans).values({
+        id: plan.id,
+        accountId: null,
+        name: plan.name,
+        scope: plan.scope,
+        rules: plan.rules,
+      });
       report.inserted += 1;
     } else if (
       existing.name !== plan.name ||

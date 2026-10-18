@@ -1,4 +1,4 @@
-// Vanilla-JS demo page: scenario + check buttons, result cards with
+// Vanilla-JS demo page: scenario and check buttons, result cards with
 // the exact API request per step, and a live-state side panel. The heavy
 // lifting (auth, orchestration, assertions) is server-side in client/core -
 // this file only renders.

@@ -5,7 +5,7 @@ import { deepStrictEqual } from 'node:assert';
 // the database, so they survive a restart.
 //
 // This probe runs against the DOCKER COMPOSE stack (localhost:3000 - the
-// same thing `docker compose up --build` provides), not the test db.
+// same stack `docker compose up --build` provides), not the test db.
 // It restarts ONLY the api container, mid-flight, and proves:
 //   - the data written before the restart is still there afterwards
 //   - a retry of the same request_id after the restart replays the stored

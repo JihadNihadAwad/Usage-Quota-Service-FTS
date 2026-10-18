@@ -26,7 +26,7 @@ body {
   line-height: 1.5;
 }
 
-/* two-column layout: story on the left, live state on the right */
+/* two-column layout: scenarios on the left, live state on the right */
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -115,7 +115,7 @@ h1 {
   padding: 14px 16px;
 }
 
-.card.pass.story {
+.card.pass.scenario {
   border-left: 4px solid var(--ok);
 }
 

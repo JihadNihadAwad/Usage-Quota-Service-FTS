@@ -5,7 +5,7 @@
 //
 // Two sections, both rendered by the same machinery:
 //
-//   The story (scenarios 1-7):
+//   Scenarios 1-7, in order:
 //     1. Setup        - bootstrap DocuFlow, alice (Basic) + bob (Premium)
 //     2. Small doc    - alice consumes 10 -> accepted at both levels
 //     3. Big doc      - alice requests 25 -> rejected by user max_per_request
@@ -16,8 +16,8 @@
 //     6. Replay       - same request_id twice -> identical decision, charged once
 //     7. Run all      - every scenario, fresh account, in order
 //
-//   Checks (8-13) - extra buttons for additional behaviors
-//   to verify, all non-mutating for the state built by scenarios 1-7:
+//   Checks 8-13 - additional behaviors worth verifying,
+//   all non-mutating for the state built by 1-7:
 //     8.  Isolation - a second account cannot see this one (404 masking)
 //     9.  Retry conflict - same request_id, different payload (409)
 //     10. Predefined plans are read-only (403)
@@ -36,7 +36,7 @@ import {
 } from './api.js';
 import { freshState, type DemoState } from './state.js';
 
-export type ScenarioCategory = 'story' | 'check';
+export type ScenarioCategory = 'scenario' | 'check';
 
 export interface DemoContext {
   api: UsageApi;
@@ -176,7 +176,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   {
     number: 1,
     title: 'Setup - bootstrap the account and its users',
-    category: 'story',
+    category: 'scenario',
     needsSetup: false,
     async run({ api, state }) {
       Object.assign(state, freshState()); // every Setup starts a fresh run + account
@@ -229,7 +229,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   {
     number: 2,
     title: 'Small document - accepted at both levels',
-    category: 'story',
+    category: 'scenario',
     needsSetup: true,
     async run({ api, state }) {
       const { key, alice } = requireSetup(state);
@@ -259,7 +259,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   {
     number: 3,
     title: 'Oversized document - rejected by the user per-request limit',
-    category: 'story',
+    category: 'scenario',
     needsSetup: true,
     async run({ api, state }) {
       const { key, alice } = requireSetup(state);
@@ -282,7 +282,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   {
     number: 4,
     title: 'Tight custom account plan - the shared limit says stop',
-    category: 'story',
+    category: 'scenario',
     needsSetup: true,
     async run({ api, state }) {
       const { key, bob } = requireSetup(state);
@@ -335,7 +335,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   {
     number: 5,
     title: 'Plan switch to Pro - the same call now passes, client unchanged',
-    category: 'story',
+    category: 'scenario',
     needsSetup: true,
     async run({ api, state }) {
       const { key, bob } = requireSetup(state);
@@ -366,7 +366,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   {
     number: 6,
     title: 'Idempotent replay - same request_id, charged exactly once',
-    category: 'story',
+    category: 'scenario',
     needsSetup: true,
     async run({ api, state }) {
       const { key, alice } = requireSetup(state);
@@ -415,8 +415,8 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   },
   {
     number: 7,
-    title: 'Run all - every scenario from a fresh account',
-    category: 'story',
+    title: 'Run all - every scenario in order from a fresh account',
+    category: 'scenario',
     needsSetup: false,
     async run(ctx) {
       const steps: StepResult[] = [{ note: 'Fresh account, then scenarios 1-6 in order.' }];

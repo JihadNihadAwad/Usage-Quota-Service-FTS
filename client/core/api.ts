@@ -1,5 +1,5 @@
 // Thin typed HTTP client for the usage API's wire format. Shared by the web
-// demo server and the headless runner, so both tell exactly the same story.
+// demo server and the headless runner, so both run exactly the same steps.
 //
 // Every method returns { request, data }: the request descriptor (method,
 // path, body) is surfaced with each call so the demo can SHOW the API

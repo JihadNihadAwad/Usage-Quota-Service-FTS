@@ -1,9 +1,9 @@
 import type { Rules } from '../domain/rules/schemas.js';
 
-// The predefined plans (brief: ready-to-use plans present "when the service starts").
-// The ids are fixed, deliberately memorable UUIDs so the README,
-// the demo client, and psql can hard-reference them. The seed upserts by id,
-// so these are stable forever.
+// The predefined plans, present from the moment the service starts (seeded
+// idempotently at container startup).
+// The ids are fixed, deliberately memorable UUIDs so the README, the demo client, and psql can
+// hard-reference them. The seed upserts by id, so these are stable forever.
 
 export type { Rules };
 
@@ -46,6 +46,7 @@ export const PREDEFINED_PLANS: readonly PredefinedPlan[] = [
   },
 ];
 
-// API defaults when a caller doesn't pick a plan (used by the HTTP routes).
+// API defaults when a caller doesn't pick a plan (the HTTP routes use these
+// when plan_id is omitted).
 export const DEFAULT_ACCOUNT_PLAN_ID = STARTER_PLAN_ID;
 export const DEFAULT_USER_PLAN_ID = BASIC_PLAN_ID;

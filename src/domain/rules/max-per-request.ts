@@ -8,7 +8,7 @@ import {
 
 /**
  * max_per_request - the largest amount consumable in a single request
- * (counting requests rather than units, at both plan levels).
+ * (one of the two required rule types, at both plan levels).
  * Stateless: the decision needs no usage data, only the request itself.
  */
 export const MaxPerRequestRule: RuleDefinition = {

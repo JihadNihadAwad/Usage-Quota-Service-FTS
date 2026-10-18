@@ -7,8 +7,7 @@ import { serializeAccount, serializeCreatedAccount } from '../serialize.js';
 import { createAccount, getAccount, updateAccountPlan } from '../../services/accounts.js';
 
 /**
- * POST /accounts - the unauthenticated bootstrap endpoint,
- * deliberately mounted BEFORE the auth gate in the server.
+ * POST /accounts - the unauthenticated bootstrap endpoint, deliberately mounted BEFORE the auth gate in the server.
  */
 export function publicAccountRoutes(db: Db): Router {
   const router = Router();

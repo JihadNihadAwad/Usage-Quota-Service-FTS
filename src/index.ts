@@ -2,8 +2,9 @@ import { loadEnv } from './config/env.js';
 import { createApp } from './http/server.js';
 import { logger, setLogLevel } from './lib/logger.js';
 
-// Dev entry (`npm run dev`); src/start.ts is the container entrypoint:
-// migrate -> seed -> listen, all in one process.
+// Dev entry (`npm run dev`). Containers use src/start.ts instead: it
+// applies migrations and seeds before listening, so a container is
+// self-initializing.
 const env = loadEnv();
 setLogLevel(env.LOG_LEVEL);
 const app = createApp();

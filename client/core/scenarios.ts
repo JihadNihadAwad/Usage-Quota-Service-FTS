@@ -5,7 +5,7 @@
 //
 // Two sections, both rendered by the same machinery:
 //
-//   Scenarios 1-7, in order:
+//   Scenarios 1-7 - the core demonstrations, in order:
 //     1. Setup        - bootstrap DocuFlow, alice (Basic) + bob (Premium)
 //     2. Small doc    - alice consumes 10 -> accepted at both levels
 //     3. Big doc      - alice requests 25 -> rejected by user max_per_request
@@ -14,10 +14,9 @@
 //     5. Upgrade      - switch the account to Pro; the SAME client call that
 //                       just failed is now accepted - no client code changed
 //     6. Replay       - same request_id twice -> identical decision, charged once
-//     7. Run all      - every scenario, fresh account, in order
+//     7. Run all      - every scenario in order, from a fresh account
 //
-//   Checks 8-13 - additional behaviors worth verifying,
-//   all non-mutating for the state built by 1-7:
+//   Checks 8-13 - additional behaviors worth verifying, all non-mutating for the state built by 1-7:
 //     8.  Isolation - a second account cannot see this one (404 masking)
 //     9.  Retry conflict - same request_id, different payload (409)
 //     10. Predefined plans are read-only (403)

@@ -74,7 +74,7 @@ export async function listHistory(
     // plain DESC means NULLS FIRST to Postgres - a different sort order,
     // which blocked index-backed ordering entirely (every page did a seq
     // scan + top-N sort of the account's whole ledger). Caught via EXPLAIN
-    // ANALYZE; before/after in performance/results/.
+    // ANALYZE; before/after captures live in performance/results/.
     .orderBy(sql`${requests.createdAt} desc nulls last`, sql`${requests.id} desc nulls last`)
     .limit(filters.limit + 1);
 

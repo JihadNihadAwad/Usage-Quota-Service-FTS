@@ -2,8 +2,8 @@
 // demo server and the headless runner, so both run exactly the same steps.
 //
 // Every method returns { request, data }: the request descriptor (method,
-// path, body) is surfaced with each call so the demo can SHOW the API
-// request next to its response - part of the demo.
+// path, body) is surfaced with each call so the demo can show the exact API
+// request next to its response.
 //
 // Note the consume semantics: a REJECTED quota decision is a
 // 200 with `accepted: false` in the body - only transport/protocol failures

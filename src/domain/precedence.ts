@@ -4,9 +4,9 @@ import type { RuleFailure, RuleId, RuleLevel } from './rules/types.js';
  * Primary-reason order when several rules deny the same request.
  * Rationale: stateless denials first (cheapest to explain, no state read
  * involved), user before account (the more specific plan speaks first),
- * per-request rules before monthly ones (typical examples lead
- * with the per-request rejection). The response carries the primary reason
- * plus the full ordered failure list, so callers can always see everything.
+ * per-request rules before monthly ones (the most obvious denial to surface).
+ * The response carries the primary reason plus the full ordered failure
+ * list, so callers can always see everything.
  */
 export const PRECEDENCE: ReadonlyArray<{ level: RuleLevel; rule: RuleId }> = [
   { level: 'user', rule: 'max_per_request' },

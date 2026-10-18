@@ -10,7 +10,9 @@ export type RuleLevel = 'account' | 'user';
  */
 export type RuleId = 'max_per_request' | 'monthly_allowance' | 'monthly_request_cap';
 
-/** Upper bound for any configured rule value (units capped at the same 1e12 bound). */
+/** Upper bound for any configured rule value - the same 1e12 cap that
+ *  bounds request units (see src/http/dto.ts), so rule values and request
+ *  sizes live on one scale. */
 export const MAX_RULE_VALUE = 1_000_000_000_000;
 
 /** One way a request can be denied. `message` is safe to show a caller. */
@@ -22,8 +24,8 @@ export interface RuleFailure {
 
 /**
  * Everything a rule may look at. The state fields are loaded by the caller -
- * the consume transaction loads them, under the row locks -
- * so rules themselves stay pure: same input, same answer, no side effects.
+ * the consume transaction loads them under the row locks - so rules
+ * themselves stay pure: same input, same answer, no side effects.
  */
 export interface RuleEvaluationContext {
   level: RuleLevel;

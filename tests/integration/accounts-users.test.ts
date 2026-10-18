@@ -81,7 +81,8 @@ describe('user management', () => {
       plan: { id: BASIC_PLAN_ID, name: 'Basic' },
     });
 
-    // Two accounts may independently use the same external id (assumption #11).
+    // Two accounts may independently use the same external id (external
+    // ids are namespaced per account).
     const rival = await bootstrapAccount(agent, 'Rival');
     const theirAlice = await agent
       .post('/v1/users')

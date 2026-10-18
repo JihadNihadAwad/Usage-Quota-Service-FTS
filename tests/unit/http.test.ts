@@ -4,7 +4,8 @@ import { createApp } from '../../src/http/server.js';
 
 // HTTP smoke tests that need no database: the auth gate runs before any
 // route touches the db, and request validation runs before handlers too.
-// The db-backed suites run against the compose test db.
+// The db-backed suites live in tests/integration (they need a real
+// database, via the compose `test` profile).
 
 describe('auth gate', () => {
   it('rejects requests with no Authorization header', async () => {

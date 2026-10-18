@@ -8,7 +8,7 @@ import {
 
 /**
  * monthly_allowance - total units available during a UTC calendar month
- * (the other brief-required rule, at both plan levels).
+ * (the other required rule type, at both plan levels).
  * Stateful: compares the request against `allowance - used`.
  *
  * The zero-floor (Math.max(0, ...)) implements the plan-change semantics:

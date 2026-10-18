@@ -5,7 +5,7 @@
 //
 // Drizzle wraps driver errors in its own Error ("Failed query: ...") with
 // the original pg error on `.cause`, so fields have to be searched along
-// the cause chain 
+// the cause chain.
 
 interface PgErrorInfo {
   code?: string;

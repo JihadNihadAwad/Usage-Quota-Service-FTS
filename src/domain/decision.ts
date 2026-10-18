@@ -4,10 +4,10 @@ import type { Rules } from './rules/schemas.js';
 import type { RuleFailure, RuleLevel } from './rules/types.js';
 
 /**
- * The state one level brings to a consume evaluation. The consume transaction loads this
- * inside the consume transaction, under the row locks; this module stays
- * pure (the entire quota decision is a pure function of this
- * snapshot plus the request).
+ * The state one level brings to a consume evaluation. The consume
+ * transaction loads this snapshot under the row locks; this module stays
+ * pure - the entire quota decision is a pure function of this snapshot plus
+ * the request.
  */
 export interface LevelContext {
   level: RuleLevel;
@@ -19,8 +19,9 @@ export interface LevelContext {
 }
 
 /**
- * The consume decision. Acceptance consumes the full amount (all-or-nothing). A rejection consumes nothing - structurally: the
- * rejected branch does not carry a `unitsConsumed` field at all.
+ * The consume decision. Acceptance consumes the full amount (all-or-nothing).
+ * A rejection consumes nothing - structurally: the rejected branch does not
+ * carry a `unitsConsumed` field at all.
  */
 export type Decision =
   | { accepted: true; units: number; unitsConsumed: number }

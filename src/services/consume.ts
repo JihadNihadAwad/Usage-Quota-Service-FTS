@@ -27,7 +27,7 @@ import { isUniqueViolation, uniqueViolationConstraint } from '../lib/pg-errors.j
  * Why READ COMMITTED + explicit locks rather than SERIALIZABLE: our
  * contention pattern is a single hot row per account; pessimistic locking
  * gives deterministic behavior without SERIALIZABLE's retry storms
- * Why not an application mutex: single-instance
+ *. Why not an application mutex: single-instance
  * only, and the locks must live with the data anyway.
  */
 
@@ -139,7 +139,8 @@ async function consumeInTransaction(
 
   // 1. Load the user with their plan, scoped to the calling account - a user
   // id from another account is indistinguishable from a nonexistent one
-  // Done inside the transaction and BEFORE the lazy usage-row
+  // Done inside the transaction and BEFORE
+  // the lazy usage-row
   // insert: that insert carries a foreign key on user_id, and an explicit
   // 404 (not an FK violation) is the contract.
   const userRow = (
@@ -180,9 +181,8 @@ async function consumeInTransaction(
   const userPlanId = String(userRow.plan_id);
   const accountPlanId = String(accountRow.account_plan_id);
 
-  // 2. Lazy materialization of this month's counter rows: the
-  // first consume of a UTC month creates them; a missing row means zero
-  // usage. ON CONFLICT DO NOTHING keeps re-consumes idempotent - the rows
+  // 2. Lazy materialization of this month's counter rows: the first consume of a UTC month creates them; a
+  // missing row means zero usage. ON CONFLICT DO NOTHING keeps re-consumes idempotent - the rows
   // are locked and re-read immediately below either way.
   await tx.execute(sql`
     insert into account_usage (account_id, month_start, used_units)
@@ -285,7 +285,8 @@ async function consumeInTransaction(
     },
   );
 
-  // 8. If accepted, consume the FULL amount at both levels (all-or-nothing). RETURNING hands back the authoritative post-update
+  // 8. If accepted, consume the FULL amount at both levels (the consume
+  // model is all-or-nothing). RETURNING hands back the authoritative post-update
   // totals - no application-side arithmetic, no read-modify-write drift.
   // The CHECK (used_units >= 0) constraints backstop the ledger.
   let accountUsedAfter = accountUsed;

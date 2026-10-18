@@ -8,9 +8,9 @@ import { logger, setLogLevel } from './lib/logger.js';
 
 /**
  * Container entrypoint (`node dist/start.js`): one process does everything
- * at startup - apply the committed migrations, seed the
- * predefined plans (both idempotent), then listen. `docker compose up` is
- * therefore the only setup step; no manual init.
+ * needed at startup - apply the committed migrations, seed the predefined
+ * plans (both idempotent), then listen. `docker compose up` is therefore
+ * the only setup step; no manual init.
  *
  * Dev entry (`npm run dev`, src/index.ts) skips migration/seeding and assumes
  * `npm run migrate && npm run seed` were run against the dev database.

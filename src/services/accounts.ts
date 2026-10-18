@@ -95,7 +95,7 @@ export async function getAccount(db: Db, accountId: string): Promise<AccountView
 }
 
 /** Switch the account's plan. Usage counters are untouched - switching never
- *  grants a fresh allowance (brief: plan-change semantics). */
+ *  grants a fresh allowance (plan-change semantics). */
 export async function updateAccountPlan(
   db: Db,
   accountId: string,

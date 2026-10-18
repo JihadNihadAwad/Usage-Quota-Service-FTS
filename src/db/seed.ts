@@ -4,8 +4,8 @@ import { closePool, getDb, type Db } from './client.js';
 import { PREDEFINED_PLANS } from './predefined.js';
 import { plans } from './schema.js';
 
-// Idempotency matters twice here: predefined plans are seeded "when
-// the service starts", and containers restart - so re-running must be a no-op.
+// Idempotency matters twice here: predefined plans must exist from the moment
+// the service starts, and containers restart - so re-running must be a no-op.
 // We upsert by fixed id and report insert/update/unchanged so the startup log
 // tells the truth about what happened.
 
@@ -63,8 +63,8 @@ async function main(): Promise<void> {
   );
 }
 
-// Run as `npm run seed`, but stay importable (container startup calls
-// seedPredefinedPlans() directly from the container entrypoint).
+// Run as `npm run seed`, but stay importable (the container entrypoint calls
+// seedPredefinedPlans() directly at startup).
 const invokedDirectly =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 

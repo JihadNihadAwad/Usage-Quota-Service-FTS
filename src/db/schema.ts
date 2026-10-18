@@ -71,8 +71,9 @@ export const apiKeys = pgTable(
     accountId: uuid('account_id')
       .notNull()
       .references(() => accounts.id),
-    // sha-256 hex of the full `um_...` key; unique index below
-    // makes auth an O(1) indexed lookup on the only thing we store.
+    // sha-256 hex of the full `um_...` key;
+    // the unique index below makes auth an O(1) indexed lookup on the only
+    // thing we store.
     keyHash: text('key_hash').notNull(),
     // Display prefix (first 12 chars) so logs/UI can hint at a key without
     // storing anything reusable.
@@ -110,7 +111,8 @@ export const accountUsage = pgTable(
     // First day of the UTC calendar month the usage belongs to ('YYYY-MM-DD').
     monthStart: date('month_start', { mode: 'string' }).notNull(),
     // bigint because units are unbounded sums; drizzle's number mode is the
-    // single deliberate string->number conversion point (glossary: bigint).
+    // single deliberate string->number conversion point (pg returns bigint
+    // as text).
     usedUnits: bigint('used_units', { mode: 'number' }).notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -137,8 +139,8 @@ export const userUsage = pgTable(
 );
 
 // The request ledger: history, idempotency store, and audit trail in one table
-// Every consume decision is recorded forever with the exact
-// rules it was judged under and the exact response body we returned.
+// Every consume decision is recorded forever
+// with the exact rules it was judged under and the exact response body we returned.
 export const requests = pgTable(
   'requests',
   {
@@ -179,7 +181,8 @@ export const requests = pgTable(
     index('requests_account_recent_idx').on(t.accountId, t.createdAt.desc(), t.id.desc()),
     index('requests_user_recent_idx').on(t.userId, t.createdAt.desc(), t.id.desc()),
     // Partial indexes (only accepted rows) feed the monthly_request_cap counts
-    // cheaply - rejections don't bloat the count path (glossary: partial index).
+    // cheaply - rejections don't bloat the count path (a partial index only
+    // contains the rows the count needs).
     index('requests_account_month_accepted_idx')
       .on(t.accountId, t.monthStart)
       .where(sql`${t.accepted}`),

@@ -9,6 +9,10 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# load-test dataset handle: contains a live admin API key
+performance/loadtest-state.json
+
 *.log
 .DS_Store
 Thumbs.db

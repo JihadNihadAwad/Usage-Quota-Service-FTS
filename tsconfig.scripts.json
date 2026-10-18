@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["scripts/**/*.ts", "client/core/api.ts"]
+  "include": ["scripts/**/*.ts", "client/core/api.ts", "performance/**/*.ts"]
 }

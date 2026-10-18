@@ -4,7 +4,7 @@
 #   - client  demo web app, talks to api over the compose network
 # Opt-in profiles (never start with a plain `up`):
 #   - test    db-test on localhost:5433 (integration suite)
-#   - perf    k6 load-test runner (opt-in)
+#   - perf    k6 load-test runner (grafana/k6), scripts in performance/k6/
 #
 # The host dev flow (`npm run dev`) still maps db's 5432 to localhost.
 
@@ -86,6 +86,23 @@ services:
       timeout: 3s
       retries: 12
       start_period: 5s
+    networks:
+      - fts_net
+
+  k6:
+    # Load-test runner. Opt-in via the perf profile so a plain
+    # `docker compose up` never starts it. `compose run` starts the api and
+    # db dependencies automatically; the stages themselves are run through
+    # the bench:* npm scripts, which pass the script path as the command.
+    image: grafana/k6:1.4.0
+    profiles: ['perf']
+    volumes:
+      - ./performance:/perf
+    environment:
+      BASE_URL: http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
     networks:
       - fts_net
 

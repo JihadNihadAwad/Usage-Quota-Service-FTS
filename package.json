@@ -24,11 +24,13 @@
     "demo": "tsx watch client/server.ts",
     "demo:headless": "tsx client/demo.ts",
     "build:client": "tsc -p tsconfig.client.json",
-    "bench:smoke": "echo \"not implemented yet\"",
-    "bench:baseline": "echo \"not implemented yet\"",
-    "bench:contention-user": "echo \"not implemented yet\"",
-    "bench:contention-account": "echo \"not implemented yet\"",
-    "bench:mixed": "echo \"not implemented yet\""
+    "bench:seed": "tsx performance/seed.ts",
+    "bench:smoke": "docker compose --profile perf run --rm k6 run /perf/k6/01-smoke.js",
+    "bench:baseline": "docker compose --profile perf run --rm k6 run /perf/k6/02-baseline.js",
+    "bench:contention-user": "docker compose --profile perf run --rm k6 run /perf/k6/03-contention-single-user.js",
+    "bench:contention-account": "docker compose --profile perf run --rm k6 run /perf/k6/04-contention-account.js",
+    "bench:mixed": "docker compose --profile perf run --rm k6 run /perf/k6/05-mixed.js",
+    "bench:invariants": "tsx performance/check-invariants.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",

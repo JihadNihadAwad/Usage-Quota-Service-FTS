@@ -18,6 +18,7 @@
     "test:integration": "echo \"not implemented yet\"",
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
+    "db:generate": "drizzle-kit generate",
     "demo": "echo \"not implemented yet\"",
     "demo:headless": "echo \"not implemented yet\"",
     "bench:smoke": "echo \"not implemented yet\"",

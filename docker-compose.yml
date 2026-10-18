@@ -1,0 +1,61 @@
+# Database only for now; the api/client/k6 services join in their
+# own commits - this file grows into the full stack.
+#
+#   docker compose up -d db          # dev database (localhost:5432)
+#   docker compose --profile test up -d db-test   # integration db (localhost:5433)
+#
+# db-test is behind the `test` profile so a plain `docker compose up` never
+# starts it. Data lives on named volumes (ext4 inside the WSL2 VM - decision
+# #16), so it survives `docker compose down` and container replacement.
+
+name: fts
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fts-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fts
+    ports:
+      - '5432:5432'
+    volumes:
+      - fts_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d fts']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    networks:
+      - fts_net
+
+  db-test:
+    image: postgres:17-alpine
+    container_name: fts-db-test
+    profiles: ['test']
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fts_test
+    ports:
+      - '5433:5432'
+    volumes:
+      - fts_pg_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d fts_test']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    networks:
+      - fts_net
+
+volumes:
+  fts_pg_data:
+  fts_pg_test_data:
+
+networks:
+  fts_net:
+    driver: bridge

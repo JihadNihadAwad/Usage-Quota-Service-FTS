@@ -1,10 +1,30 @@
 import { defineConfig } from 'vitest/config';
 
-// Unit tests only for now; the db-backed projects come with the compose stack
-// (unit + integration against the compose `test` profile DB on :5433).
+// Two projects:
+// - unit      runs anywhere, no database (npm test)
+// - integration  needs the compose `test` profile database on :5433
+//               (docker compose --profile test up -d --wait db-test),
+//               and runs files sequentially so per-file truncation can't race.
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['tests/unit/**/*.test.ts'],
+    projects: [
+      {
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['tests/unit/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'integration',
+          environment: 'node',
+          include: ['tests/integration/**/*.test.ts'],
+          fileParallelism: false,
+          testTimeout: 30_000,
+          hookTimeout: 60_000,
+        },
+      },
+    ],
   },
 });

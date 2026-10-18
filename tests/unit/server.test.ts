@@ -39,11 +39,17 @@ describe('boot suite', () => {
     expect(res.body).toEqual({ status: 'ready' });
   });
 
-  it('unknown routes get the JSON error envelope', async () => {
-    const res = await request(createApp()).get('/v1/nope');
+  it('unknown routes outside /v1 get the JSON error envelope', async () => {
+    const res = await request(createApp()).get('/nope');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({
       error: { code: 'NOT_FOUND', message: 'resource not found' },
     });
+  });
+
+  it('unknown /v1 routes without a key are 401, not 404 - auth gates first', async () => {
+    const res = await request(createApp()).get('/v1/nope');
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
   });
 });

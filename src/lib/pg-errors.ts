@@ -4,28 +4,44 @@
 // out as a raw 500.
 //
 // Drizzle wraps driver errors in its own Error ("Failed query: ...") with
-// the original pg error on `.cause`, so the code has to be searched along
+// the original pg error on `.cause`, so fields have to be searched along
 // the cause chain 
 
-export function isUniqueViolation(err: unknown): boolean {
-  return findPgErrorCode(err) === '23505';
+interface PgErrorInfo {
+  code?: string;
+  constraint?: string;
 }
 
-export function isForeignKeyViolation(err: unknown): boolean {
-  return findPgErrorCode(err) === '23503';
-}
-
-function findPgErrorCode(err: unknown): string | undefined {
+function pgErrorInfo(err: unknown): PgErrorInfo {
+  const info: PgErrorInfo = {};
   let current: unknown = err;
   const seen = new Set<unknown>();
   while (typeof current === 'object' && current !== null && !seen.has(current)) {
     seen.add(current);
-    if ('code' in current) {
+    if (info.code === undefined && 'code' in current) {
       const code = (current as { code?: unknown }).code;
       // pg error codes are five-character strings (23505, 23503, ...).
-      if (typeof code === 'string' && /^\d{5}$/.test(code)) return code;
+      if (typeof code === 'string' && /^\d{5}$/.test(code)) info.code = code;
+    }
+    if (info.constraint === undefined && 'constraint' in current) {
+      const constraint = (current as { constraint?: unknown }).constraint;
+      if (typeof constraint === 'string') info.constraint = constraint;
     }
     current = (current as { cause?: unknown }).cause;
   }
-  return undefined;
+  return info;
+}
+
+export function isUniqueViolation(err: unknown): boolean {
+  return pgErrorInfo(err).code === '23505';
+}
+
+export function isForeignKeyViolation(err: unknown): boolean {
+  return pgErrorInfo(err).code === '23503';
+}
+
+/** Which unique constraint fired, when err is a unique violation. */
+export function uniqueViolationConstraint(err: unknown): string | null {
+  const info = pgErrorInfo(err);
+  return info.code === '23505' && info.constraint !== undefined ? info.constraint : null;
 }

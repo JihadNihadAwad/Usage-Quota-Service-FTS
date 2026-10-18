@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Usage Quota Service — demo client</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Usage metering & quota service — demo client</h1>
+        <p class="sub">
+          DocuFlow (the calling application) keeps its API key on its own server — this page never
+          sees it. Buttons run in story order; “Run all” starts a fresh account and plays the whole
+          thing.
+        </p>
+        <p id="status" class="status">loading…</p>
+      </header>
+      <nav id="buttons" class="buttons"></nav>
+      <section id="cards" class="cards"></section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

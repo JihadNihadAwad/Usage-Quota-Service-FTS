@@ -1,0 +1,79 @@
+﻿=== 1. auth - api key hash lookup (unique index; every request) ===
+                                                            QUERY PLAN                                                             
+-----------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using api_keys_key_hash_key on api_keys k  (cost=0.15..8.17 rows=1 width=32) (actual time=0.021..0.022 rows=1 loops=1)
+   Index Cond: (key_hash = '3271d5bea7f28d6b27e85749299185d07a313ef1eff9fe8c852d9c9171df6e63'::text)
+   Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=90
+ Planning Time: 4.255 ms
+ Execution Time: 0.106 ms
+(7 rows)
+
+=== 2. consume - user + plan load by user id (every consume) ===
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.15..12.15 rows=1 width=80) (actual time=0.040..0.047 rows=1 loops=1)
+   Buffers: shared hit=4
+   ->  Seq Scan on users u  (cost=0.00..3.95 rows=1 width=16) (actual time=0.019..0.025 rows=1 loops=1)
+         Filter: ((id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8'::uuid) AND (account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid))
+         Rows Removed by Filter: 129
+         Buffers: shared hit=2
+   ->  Index Scan using plans_pkey on plans p  (cost=0.15..8.17 rows=1 width=80) (actual time=0.018..0.018 rows=1 loops=1)
+         Index Cond: (id = u.plan_id)
+         Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=198
+ Planning Time: 2.697 ms
+ Execution Time: 0.106 ms
+(13 rows)
+
+=== 3. consume - account counter select for update (the serialization point) ===
+                                                      QUERY PLAN                                                      
+----------------------------------------------------------------------------------------------------------------------
+ LockRows  (cost=0.00..3.23 rows=1 width=14) (actual time=0.126..0.128 rows=1 loops=1)
+   Buffers: shared hit=5
+   ->  Seq Scan on account_usage  (cost=0.00..3.23 rows=1 width=14) (actual time=0.040..0.041 rows=1 loops=1)
+         Filter: ((account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid) AND (month_start = '2026-10-01'::date))
+         Rows Removed by Filter: 14
+         Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=42
+ Planning Time: 0.664 ms
+ Execution Time: 0.174 ms
+(10 rows)
+
+=== 4. history - keyset page (index on (account_id, created_at desc, id desc)) ===
+                                                        QUERY PLAN                                                         
+---------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=5445.80..5445.85 rows=21 width=56) (actual time=17.003..17.008 rows=21 loops=1)
+   Buffers: shared hit=4149
+   ->  Sort  (cost=5445.80..5528.27 rows=32988 width=56) (actual time=17.000..17.003 rows=21 loops=1)
+         Sort Key: created_at DESC, id DESC
+         Sort Method: top-N heapsort  Memory: 30kB
+         Buffers: shared hit=4149
+         ->  Seq Scan on requests  (cost=0.00..4556.39 rows=32988 width=56) (actual time=0.019..12.443 rows=33031 loops=1)
+               Filter: (account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid)
+               Rows Removed by Filter: 77
+               Buffers: shared hit=4143
+ Planning:
+   Buffers: shared hit=150
+ Planning Time: 0.921 ms
+ Execution Time: 17.058 ms
+(14 rows)
+
+=== 5. consume - accepted-request count via partial index (monthly_request_cap rule) ===
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=354.43..354.44 rows=1 width=8) (actual time=0.703..0.704 rows=1 loops=1)
+   Buffers: shared hit=13
+   ->  Index Only Scan using requests_user_month_accepted_idx on requests  (cost=0.29..341.26 rows=5267 width=0) (actual time=0.066..0.475 rows=5227 loops=1)
+         Index Cond: ((user_id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8'::uuid) AND (month_start = '2026-10-01'::date))
+         Heap Fetches: 5
+         Buffers: shared hit=13
+ Planning:
+   Buffers: shared hit=45
+ Planning Time: 0.870 ms
+ Execution Time: 0.745 ms
+(10 rows)
+

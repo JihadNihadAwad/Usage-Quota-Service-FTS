@@ -1,0 +1,4 @@
+﻿=== ledger rows per user-rule snapshot (both mixed runs + plan change) ===
+ 1000            |       24803
+ 1200            |       29229
+

@@ -1,0 +1,267 @@
+{
+  "metrics": {
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 6,
+        "rate": 98.44309295203567
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 0.11636875,
+        "avg": 0.04077150000000001,
+        "min": 0.011297,
+        "med": 0.0220585,
+        "max": 0.145016,
+        "p(90)": 0.08772150000000001
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 0.3169155,
+        "p(95)": 0.47537325,
+        "avg": 0.10563850000000001,
+        "min": 0,
+        "med": 0,
+        "max": 0.633831
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 4871,
+        "rate": 79919.38429489429
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 9.514308666666667,
+        "min": 2.633152,
+        "med": 6.9227875,
+        "max": 24.747253,
+        "p(90)": 18.646457,
+        "p(95)": 21.696855
+      }
+    },
+    "iterations": {
+      "values": {
+        "count": 1,
+        "rate": 16.40718215867261
+      },
+      "type": "counter",
+      "contains": "default"
+    },
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0,
+        "min": 0,
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0
+      }
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 9.3618095,
+        "min": 2.525963,
+        "med": 6.8204365,
+        "max": 24.426452,
+        "p(90)": 18.4124875,
+        "p(95)": 21.41946975
+      }
+    },
+    "http_req_duration": {
+      "contains": "time",
+      "values": {
+        "p(95)": 21.696855,
+        "avg": 9.514308666666667,
+        "min": 2.633152,
+        "med": 6.9227875,
+        "max": 24.747253,
+        "p(90)": 18.646457
+      },
+      "type": "trend"
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 6
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "checks": {
+      "values": {
+        "rate": 1,
+        "passes": 10,
+        "fails": 0
+      },
+      "thresholds": {
+        "rate==1": {
+          "ok": true
+        }
+      },
+      "type": "rate",
+      "contains": "default"
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.3399353333333334,
+        "min": 0.002918,
+        "med": 0.0037645,
+        "max": 2.02137,
+        "p(90)": 1.0127575000000002,
+        "p(95)": 1.5170637500000004
+      }
+    },
+    "http_req_receiving": {
+      "contains": "time",
+      "values": {
+        "max": 0.175785,
+        "p(90)": 0.1504505,
+        "p(95)": 0.16311775,
+        "avg": 0.11172766666666667,
+        "min": 0.081065,
+        "med": 0.0990775
+      },
+      "type": "trend"
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 60.78246,
+        "max": 60.78246,
+        "p(90)": 60.78246,
+        "p(95)": 60.78246,
+        "avg": 60.78246,
+        "min": 60.78246
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "rate": 24889.695334706354,
+        "count": 1517
+      }
+    }
+  },
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [],
+    "checks": [
+        {
+          "name": "first consume accepted",
+          "path": "::first consume accepted",
+          "id": "0af1869ee600371e4458bb9d32290f38",
+          "passes": 1,
+          "fails": 0
+        },
+        {
+          "fails": 0,
+          "name": "full amount consumed",
+          "path": "::full amount consumed",
+          "id": "19824ae58b748a8db6ad2907ee52bbd7",
+          "passes": 1
+        },
+        {
+          "name": "second user accepted",
+          "path": "::second user accepted",
+          "id": "4003f94dabc75fe71172138e56d7d28a",
+          "passes": 1,
+          "fails": 0
+        },
+        {
+          "name": "oversized request rejected",
+          "path": "::oversized request rejected",
+          "id": "015ff87177177e3f2b8f491ecca64486",
+          "passes": 1,
+          "fails": 0
+        },
+        {
+          "id": "87f50f4f0a2759a1fa8f70250c7097d1",
+          "passes": 1,
+          "fails": 0,
+          "name": "rejection consumes nothing",
+          "path": "::rejection consumes nothing"
+        },
+        {
+          "path": "::reason names rule and level",
+          "id": "bacd65f77dba9ba2294ef059f7d151cf",
+          "passes": 1,
+          "fails": 0,
+          "name": "reason names rule and level"
+        },
+        {
+          "fails": 0,
+          "name": "replay returns the same decision",
+          "path": "::replay returns the same decision",
+          "id": "68d3a6db9b4cc8eee5f00cba2c0362c8",
+          "passes": 1
+        },
+        {
+          "id": "f36b1d04bfc86e2443a359e5f361eb96",
+          "passes": 1,
+          "fails": 0,
+          "name": "replay reports the original charge",
+          "path": "::replay reports the original charge"
+        },
+        {
+          "name": "usage readable",
+          "path": "::usage readable",
+          "id": "0ee252d105d92a1354580d8b5b24f4bc",
+          "passes": 1,
+          "fails": 0
+        },
+        {
+          "path": "::history newest-first with the replay adding no row",
+          "id": "eb1836f9cf1adb5a8042849443fe4467",
+          "passes": 1,
+          "fails": 0,
+          "name": "history newest-first with the replay adding no row"
+        }
+      ]
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": false,
+    "isStdErrTTY": false,
+    "testRunDurationMs": 60.948918
+  }
+}

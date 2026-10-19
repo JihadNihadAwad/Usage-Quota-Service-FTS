@@ -1,9 +1,10 @@
 // Shared helpers for every k6 stage in this directory. k6 bundles local
 // imports into the test archive, so stages stay one screen each.
 //
-// The dataset (account "Loadtest Co", its admin key, 100 users) is created
-// by `npm run bench:seed` (performance/seed.ts) and lives in
-// performance/loadtest-state.json - gitignored, since it holds a live key.
+// The dataset (the seeded "Loadtest Co" accounts, each with an admin key and
+// 100 users) is created by `npm run bench:seed` (performance/seed.ts) and
+// lives in performance/loadtest-state.json - gitignored, since it holds
+// live keys.
 
 import http from 'k6/http';
 // Pinned jslib module (versioned URL is standard k6 practice) for the

@@ -29,10 +29,9 @@ export function setup() {
 }
 
 export default function (data) {
-  // Even VUs drive account 1, odd VUs drive account 2.
+  // Even VUs drive the first account, odd VUs the second.
   const first = __VU % 2 === 1;
-  const key = first ? state.account.key : state.account2.key;
-  const users = first ? state.users : state.users2;
-  const user = users[(__VU - 1) % users.length];
-  check(consume(key, user, requestId('m', data), 1), consumeChecks());
+  const tenant = first ? state.accounts[0] : state.accounts[1];
+  const user = tenant.users[(__VU - 1) % tenant.users.length];
+  check(consume(tenant.key, user, requestId('m', data), 1), consumeChecks());
 }

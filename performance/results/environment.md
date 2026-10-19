@@ -3,10 +3,10 @@
 All numbers in this directory were produced on this machine on 2026-10-18
 (the original run set: stages 01-05, pre/post history-index fix) and
 2026-10-19 (the final run set: all six stages re-run with p99 reporting,
-plus the round-trip probe), with the stack exactly as
-`docker compose up --build` builds it (api + db on the compose bridge
-network, k6 in the `perf` profile talking to `http://api:3000` over that
-network).
+the round-trip probe, and the account-scaling stage with its pool
+experiments), with the stack exactly as `docker compose up --build`
+builds it (api + db on the compose bridge network, k6 in the `perf`
+profile talking to `http://api:3000` over that network).
 
 ## Host
 
@@ -35,13 +35,14 @@ network).
 
 ## Dataset at the end of the runs
 
-- TWO independent load-test accounts ("Loadtest Co", "Loadtest Co 2"), 100
-  users each, all on per-account custom plans with all three rules enabled
-  (so every consume runs the request-cap count)
-- 91,374 accepted requests across the two loadtest ledgers (87,185 + 4,189)
-  after the 2026-10-19 run set (91,451 rows total in `requests`, including
-  demo/probe accounts)
-- 230 users, 22 accounts in the database overall
+- EIGHT independent load-test accounts ("Loadtest Co" .. "Loadtest Co 8"),
+  100 users each, all on per-account custom plans with all three rules
+  enabled (so every consume runs the request-cap count); the first two
+  predate the scaling stage and carry the stage 02-06 history
+- 138,261 accepted requests across the eight loadtest ledgers after the
+  2026-10-19 run set (93,042 + 10,117 + 35,102 for accounts 3-8;
+  138,368 rows total in `requests`, including demo/probe accounts)
+- 839 users, 35 accounts in the database overall
 
 ## Stage parameters
 
@@ -53,8 +54,22 @@ network).
 | 04-contention-account | 100 | 45 s | 100 users, one account row |
 | 05-mixed | ramp 0→10→50→0 | 100 s | 70/15/10/5 read mix + one plan PATCH at t+50s |
 | 06-multi-account | 100 | 30 s | 50 VUs per account, two independent accounts |
+| 07-account-scaling | 100 | 30 s | 12-13 VUs per account, EIGHT accounts, api pool at default 10 |
+| 07 (pool 50) | 100 | 30 s | same stage, `POOL_MAX=50` on the api container |
+| 07 (pool 50, 200 VUs) | 200 | 30 s | saturation probe: does more load buy more throughput? |
 
 Every stage was followed by `npm run bench:invariants` (counters == ledger,
-for BOTH loadtest accounts), and every run passed. Latency numbers on a
+for ALL loadtest accounts), and every run passed. Latency numbers on a
 laptop under Docker are indicative, not absolute; the *relationships*
 between stages are the significant results.
+
+## CPU telemetry (docker stats, sampled twice mid-run of the 200-VU probe)
+
+| Container | CPU % (of its 2-CPU quota) | Reads as |
+| --------- | -------------------------- | -------- |
+| fts-db    | ~140% / ~138%              | ~70% busy - the hottest container |
+| fts-api   | ~110% / ~109%              | ~55% busy |
+| k6        | ~27% / ~21%                | load generator, single-digit need |
+
+At this point throughput had plateaued (412/s at 100 VUs vs 396/s at
+200 VUs): the wall is host CPU split across db and api, not any lock.

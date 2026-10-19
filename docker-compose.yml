@@ -45,6 +45,10 @@ services:
       PORT: 3000
       LOG_LEVEL: info
       DATABASE_URL: postgres://postgres:postgres@db:5432/fts
+      # Pool size is the api's throughput knob once per-account locks stop
+      # being the ceiling; 10 is pg's default. Override from the host for
+      # capacity experiments:  POOL_MAX=50 docker compose up -d api
+      POOL_MAX: ${POOL_MAX:-10}
     ports:
       - '3000:3000'
     depends_on:

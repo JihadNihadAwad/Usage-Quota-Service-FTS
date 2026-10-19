@@ -2,23 +2,28 @@
 //
 //   npm run bench:seed
 //
-// Creates (or reuses, via performance/loadtest-state.json):
-//   - TWO independent accounts, "Loadtest Co" and "Loadtest Co 2", each on
-//     a custom account-scope plan with very generous limits (100M/month,
+// Creates (or reuses, via performance/loadtest-state.json) EIGHT independent
+// accounts, "Loadtest Co" .. "Loadtest Co 8", each with:
+//   - a custom account-scope plan with very generous limits (100M/month,
 //     10k/request), so stages measure locking and throughput, not rejections
-//   - a custom user-scope plan per account exercising ALL THREE rules
-//     (1M/month, 1k/request, 1M accepted calls/month) - the request-cap rule
-//     forces the partial-index count query onto every consume, so the
-//     benchmark exercises the full rule path, not a shortcut
-//   - 100 users load-001 .. load-100 per account, all on that account's plan
+//   - a custom user-scope plan exercising ALL THREE rules (1M/month,
+//     1k/request, 1M accepted calls/month) - the request-cap rule forces the
+//     partial-index count query onto every consume, so the benchmark
+//     exercises the full rule path, not a shortcut
+//   - 100 users load-001 .. load-100, all on that account's user plan
 //
-// The second account exists for the multi-account stage: two tenants locking
-// two different account_usage rows prove the serialization ceiling is
-// per-account, not global.
+// Why eight: stage 06 proved two tenants locking two different
+// account_usage rows serialize independently; the scaling stage (07) needs
+// enough parallel tenants to find the first ceiling that is NOT a per-account
+// lock - on this stack, the api's Postgres connection pool.
 //
-// The state file holds a live admin key per account -> gitignored. If it is
-// lost while the db keeps the accounts, the script stops with instructions
-// rather than guessing (there is deliberately no delete API).
+// The state file holds a live admin key per account -> gitignored. Reuse is
+// keyed by the stored key still working (a GET /account probe), NOT by
+// account name: names are labels, not unique ids. If the state file is lost
+// while the db keeps its rows, the script simply bootstraps a fresh set of
+// accounts alongside the orphaned ones (there is no delete API); stages and
+// the invariant checker all read ids from the state file, so they follow
+// whichever dataset the file points at.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -26,8 +31,18 @@ import { fileURLToPath } from 'node:url';
 const API_BASE = process.env.USAGE_API_URL ?? 'http://localhost:3000/v1';
 const STATE_FILE = fileURLToPath(new URL('./loadtest-state.json', import.meta.url));
 
-const ACCOUNT_NAME = 'Loadtest Co';
-const SECOND_ACCOUNT_NAME = 'Loadtest Co 2';
+// The first two predate the scaling stage and their ledgers hold the stage
+// 02-06 history, so they are always reused, never recreated.
+const ACCOUNT_NAMES = [
+  'Loadtest Co',
+  'Loadtest Co 2',
+  'Loadtest Co 3',
+  'Loadtest Co 4',
+  'Loadtest Co 5',
+  'Loadtest Co 6',
+  'Loadtest Co 7',
+  'Loadtest Co 8',
+];
 const ACCOUNT_PLAN_NAME = 'Loadtest Account';
 const USER_PLAN_NAME = 'Loadtest User';
 const USER_COUNT = 100;
@@ -38,14 +53,21 @@ interface AccountRef {
   key: string;
 }
 
-interface State {
-  account: AccountRef;
-  accountPlanId: string;
-  userPlanId: string;
+interface AccountEntry extends AccountRef {
   users: string[];
-  account2: AccountRef;
-  users2: string[];
+}
+
+interface State {
+  accounts: AccountEntry[];
   createdAt: string;
+}
+
+/** State files written before the scaling stage; translated on load. */
+interface LegacyState {
+  account: AccountRef;
+  users: string[];
+  account2?: AccountRef;
+  users2?: string[];
 }
 
 interface Json {
@@ -90,42 +112,58 @@ async function accountAlive(account: AccountRef | undefined): Promise<boolean> {
   }
 }
 
-async function loadExisting(): Promise<State | null> {
+/** Read the state file, translating any pre-scaling format into the current
+ *  shape. Returns null when the file is absent or unreadable. */
+function loadStateFile(): State | null {
   if (!existsSync(STATE_FILE)) return null;
-  let state: State;
+  let parsed: unknown;
   try {
-    state = JSON.parse(readFileSync(STATE_FILE, 'utf8')) as State;
+    parsed = JSON.parse(readFileSync(STATE_FILE, 'utf8')) as unknown;
   } catch {
     return null;
   }
-  if (!(await accountAlive(state.account))) return null; // key stale or db wiped
-  // Older state files predate the second account; build just that one.
-  if (!(await accountAlive(state.account2))) {
-    const second = await createDataset(SECOND_ACCOUNT_NAME);
-    state.account2 = second.account;
-    state.users2 = second.users;
+  const record = parsed as Record<string, unknown>;
+  if (Array.isArray(record.accounts)) return parsed as State;
+  // Two-account era: fold the top-level fields into the accounts array.
+  const legacy = parsed as LegacyState;
+  const accounts: AccountEntry[] = [];
+  if (legacy.account !== undefined) accounts.push({ ...legacy.account, users: legacy.users });
+  if (legacy.account2 !== undefined) {
+    accounts.push({ ...legacy.account2, users: legacy.users2 ?? [] });
   }
-  return state;
+  return { accounts, createdAt: new Date().toISOString() };
+}
+
+/**
+ * The live dataset: every expected account name maps to exactly one entry
+ * whose key still works. Dead or missing entries are created fresh (stale
+ * rows remain in the db - there is no delete API - but the state file only
+ * ever points at working keys).
+ */
+async function buildState(): Promise<State> {
+  const existing = loadStateFile() ?? { accounts: [], createdAt: new Date().toISOString() };
+  const accounts: AccountEntry[] = [];
+  for (const entry of existing.accounts) {
+    if (ACCOUNT_NAMES.includes(entry.name) && (await accountAlive(entry))) {
+      accounts.push(entry);
+    }
+  }
+  for (const name of ACCOUNT_NAMES) {
+    if (accounts.some((entry) => entry.name === name)) continue;
+    const created = await createDataset(name);
+    accounts.push({ ...created.account, users: created.users });
+  }
+  return { accounts, createdAt: existing.createdAt };
 }
 
 /** One full tenant: account bootstrap + generous plans + 100 users. */
 async function createDataset(
   name: string,
 ): Promise<{ account: AccountRef; accountPlanId: string; userPlanId: string; users: string[] }> {
-  // 1. Bootstrap the account (the one unauthenticated mutation).
-  let bootstrap;
-  try {
-    bootstrap = await call('POST', '/accounts', null, { name });
-  } catch (err) {
-    if (err instanceof Error && 'status' in err && err.status === 409) {
-      throw new Error(
-        `account "${ACCOUNT_NAME}" already exists but ${STATE_FILE} is gone or stale.\n` +
-          '  The state file holds the only admin key; the API has no delete endpoint.\n' +
-          '  Reset the dataset with:  docker compose down -v && docker compose up -d --wait && npm run bench:seed',
-      );
-    }
-    throw err;
-  }
+  // 1. Bootstrap the account (the one unauthenticated mutation). Account
+  // names are labels, not unique ids - a lost state file just means a fresh
+  // dataset is bootstrapped next to any orphaned rows.
+  const bootstrap = await call('POST', '/accounts', null, { name });
   const accountId = (bootstrap.account as Json).id as string;
   const key = ((bootstrap.api_key as Json).key as string) ?? '';
 
@@ -167,29 +205,14 @@ async function createDataset(
   };
 }
 
-async function createState(): Promise<State> {
-  const first = await createDataset(ACCOUNT_NAME);
-  const second = await createDataset(SECOND_ACCOUNT_NAME);
-  return {
-    account: first.account,
-    accountPlanId: first.accountPlanId,
-    userPlanId: first.userPlanId,
-    users: first.users,
-    account2: second.account,
-    users2: second.users,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-const state = (await loadExisting()) ?? (await createState());
+const state = await buildState();
 writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + '\n');
 
-console.log(
-  `[bench:seed] account "${state.account.name}" (${state.account.id}) ready: ` +
-    `${state.users.length} users on "${USER_PLAN_NAME}", account plan "${ACCOUNT_PLAN_NAME}"`,
-);
-console.log(
-  `[bench:seed] account "${state.account2.name}" (${state.account2.id}) ready: ` +
-    `${state.users2.length} users`,
-);
+for (const entry of state.accounts) {
+  console.log(
+    `[bench:seed] account "${entry.name}" (${entry.id}) ready: ` +
+      `${entry.users.length} users on "${USER_PLAN_NAME}", account plan "${ACCOUNT_PLAN_NAME}"`,
+  );
+}
+console.log(`[bench:seed] ${state.accounts.length} accounts total`);
 console.log(`[bench:seed] state: ${STATE_FILE}`);

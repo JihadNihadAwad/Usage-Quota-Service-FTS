@@ -12,7 +12,8 @@ let db: Db | undefined;
  *  construction, so importing this module in tests without a database is safe). */
 export function getPool(): Pool {
   if (!pool) {
-    pool = new Pool({ connectionString: loadEnv().DATABASE_URL });
+    const env = loadEnv();
+    pool = new Pool({ connectionString: env.DATABASE_URL, max: env.POOL_MAX });
     // When the database dies or restarts (e.g. `docker compose restart db`),
     // pg surfaces it as an 'error' event on the pool. Without a listener,
     // Node treats it as an uncaught exception and the process crashes -

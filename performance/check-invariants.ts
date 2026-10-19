@@ -17,11 +17,17 @@ import { fileURLToPath } from 'node:url';
 const STATE_FILE = fileURLToPath(new URL('./loadtest-state.json', import.meta.url));
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/fts';
 
+interface AccountRef {
+  id: string;
+  name: string;
+}
+
 interface State {
-  account: { id: string; name: string; key: string };
-  users: string[];
-  account2: { id: string; name: string; key: string };
-  users2: string[];
+  accounts?: AccountRef[];
+  // State files written before the scaling stage kept two accounts at the
+  // top level instead of an array.
+  account?: AccountRef;
+  account2?: AccountRef;
 }
 
 const month = `${new Date().toISOString().slice(0, 7)}-01`;
@@ -114,14 +120,19 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
 
 async function main(): Promise<void> {
   const state = JSON.parse(readFileSync(STATE_FILE, 'utf8')) as State;
-  if (state.account2 === undefined) {
-    console.error('[invariants] state file predates the second account - run npm run bench:seed');
+  const accounts: AccountRef[] = Array.isArray(state.accounts)
+    ? state.accounts
+    : [state.account, state.account2].filter((a): a is AccountRef => a !== undefined);
+  if (accounts.length === 0) {
+    console.error('[invariants] no loadtest accounts in the state file - run npm run bench:seed');
     process.exitCode = 1;
     return;
   }
-  const first = await checkAccount(state.account.name, state.account.id);
-  const second = await checkAccount(state.account2.name, state.account2.id);
-  process.exitCode = first && second ? 0 : 1;
+  let allPassed = true;
+  for (const account of accounts) {
+    allPassed = (await checkAccount(account.name, account.id)) && allPassed;
+  }
+  process.exitCode = allPassed ? 0 : 1;
 }
 
 main()

@@ -31,6 +31,7 @@
     "bench:contention-account": "docker compose --profile perf run --rm k6 run /perf/k6/04-contention-account.js",
     "bench:mixed": "docker compose --profile perf run --rm k6 run /perf/k6/05-mixed.js",
     "bench:multi-account": "docker compose --profile perf run --rm k6 run /perf/k6/06-multi-account.js",
+    "bench:scaling": "docker compose --profile perf run --rm k6 run /perf/k6/07-account-scaling.js",
     "bench:invariants": "tsx performance/check-invariants.ts"
   },
   "dependencies": {

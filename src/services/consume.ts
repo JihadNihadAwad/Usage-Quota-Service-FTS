@@ -8,7 +8,7 @@ import { logger } from '../lib/logger.js';
 import { isUniqueViolation, uniqueViolationConstraint } from '../lib/pg-errors.js';
 
 /**
- * THE CONSUME TRANSACTION - the correctness heart of the service.
+ * The consume transaction.
  *
  * One READ COMMITTED transaction with explicit SQL for every critical
  * statement, so the locking protocol is inspectable statement by statement:
@@ -26,8 +26,8 @@ import { isUniqueViolation, uniqueViolationConstraint } from '../lib/pg-errors.j
  *
  * Why READ COMMITTED + explicit locks rather than SERIALIZABLE: our
  * contention pattern is a single hot row per account; pessimistic locking
- * gives deterministic behavior without SERIALIZABLE's retry storms
- *. Why not an application mutex: single-instance
+ * gives deterministic behavior without SERIALIZABLE's retry storms.
+ * Why not an application mutex: single-instance
  * only, and the locks must live with the data anyway.
  */
 
@@ -138,7 +138,7 @@ async function consumeInTransaction(
   const month = monthStart(new Date());
 
   // 1. Load the user with their plan, scoped to the calling account - a user
-  // id from another account is indistinguishable from a nonexistent one
+  // id from another account is indistinguishable from a nonexistent one.
   // Done inside the transaction and BEFORE
   // the lazy usage-row
   // insert: that insert carries a foreign key on user_id, and an explicit
@@ -181,7 +181,8 @@ async function consumeInTransaction(
   const userPlanId = String(userRow.plan_id);
   const accountPlanId = String(accountRow.account_plan_id);
 
-  // 2. Lazy materialization of this month's counter rows: the first consume of a UTC month creates them; a
+  // 2. Lazy materialization of this month's counter rows: the first
+  // consume of a UTC month creates them; a
   // missing row means zero usage. ON CONFLICT DO NOTHING keeps re-consumes idempotent - the rows
   // are locked and re-read immediately below either way.
   await tx.execute(sql`
@@ -328,8 +329,8 @@ async function consumeInTransaction(
   };
 
   // 10. The ledger row: the decision, the rule snapshots it was judged under,
-  // and the exact response body. The table's CHECK
-  // constraints structurally enforce "a rejection consumes nothing".
+  // and the exact response body. The table's CHECK constraints structurally
+  // enforce "a rejection consumes nothing".
   await tx.execute(sql`
     insert into requests
       (account_id, user_id, request_id, units, month_start, accepted, units_consumed,

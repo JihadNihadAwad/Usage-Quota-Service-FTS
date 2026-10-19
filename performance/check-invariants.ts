@@ -7,8 +7,8 @@
 //   1. account counter == sum of user counters == sum of accepted ledger units
 //   2. every rejected ledger row consumed nothing
 //   3. no counter ever exceeded its plan allowance
-// A mismatch means the stage corrupted accounting -> the stage failed,
-// whatever the latency numbers said.
+// A mismatch means the stage corrupted accounting and fails the run,
+// regardless of latency results.
 
 import { readFileSync } from 'node:fs';
 import { Pool } from 'pg';

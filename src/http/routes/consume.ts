@@ -8,7 +8,8 @@ import { consume } from '../../services/consume.js';
 export function consumeRoutes(db: Db): Router {
   const router = Router();
 
-  // 200 for BOTH accepted and rejected decisions: a quota decision is a successful API call. Replays of either outcome return the
+  // 200 for BOTH accepted and rejected decisions: a quota decision is a
+  // successful API call. Replays of either outcome return the
   // stored body with the same status it was originally sent with; a reused
   // request_id with a changed payload is 409 IDEMPOTENCY_CONFLICT.
   router.post('/consume', validate({ body: ConsumeBody }), async (req, res) => {

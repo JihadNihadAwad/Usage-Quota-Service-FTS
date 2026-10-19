@@ -30,7 +30,7 @@ What could be done about it, and why it was not done:
   per-account ceiling toward 500-1000 decisions/s.
 - Rejected because each statement in src/services/consume.ts exists to make
   the locking protocol inspectable one statement at a time - a stored
-  procedure moves the correctness heart out of the codebase and into the
+  procedure moves the core logic out of the codebase and into the
   database, where it is harder to test, review, and trace.
 - The measured ceiling (~14M accepted requests/month for one account) is
   more than two orders of magnitude beyond the largest predefined plan

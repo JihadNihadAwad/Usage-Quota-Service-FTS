@@ -32,8 +32,7 @@ export function headers(key) {
 
 /**
  * One consume call. A quota REJECTION is an HTTP 200 with accepted:false in
- * the body, so http_req_failed only
- * counts transport/protocol
+ * the body, so http_req_failed only counts transport/protocol
  * failures - the `checks` carry the semantic assertions.
  */
 export function consume(key, userId, requestId, units) {

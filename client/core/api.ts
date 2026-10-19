@@ -5,8 +5,8 @@
 // path, body) is surfaced with each call so the demo can show the exact API
 // request next to its response.
 //
-// Note the consume semantics: a REJECTED quota decision is a
-// 200 with `accepted: false` in the body - only transport/protocol failures
+// Consume semantics: a REJECTED quota decision is a 200 with
+// `accepted: false` in the body - only transport/protocol failures
 // throw here.
 
 export interface RequestInfo {

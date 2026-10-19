@@ -384,7 +384,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
       );
       try {
         // Content-identical, not byte-identical: jsonb normalizes key order
-        // deep equality is the contract.
+        // - deep equality is the contract.
         deepStrictEqual(replay.data, first.data);
       } catch {
         throw new ExpectError('the replayed response differs from the original');

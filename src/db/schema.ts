@@ -71,8 +71,7 @@ export const apiKeys = pgTable(
     accountId: uuid('account_id')
       .notNull()
       .references(() => accounts.id),
-    // sha-256 hex of the full `um_...` key;
-    // the unique index below makes auth an O(1) indexed lookup on the only
+    // sha-256 hex of the full `um_...` key; the unique index below makes auth an O(1) indexed lookup on the only
     // thing we store.
     keyHash: text('key_hash').notNull(),
     // Display prefix (first 12 chars) so logs/UI can hint at a key without
@@ -138,9 +137,9 @@ export const userUsage = pgTable(
   ],
 );
 
-// The request ledger: history, idempotency store, and audit trail in one table
-// Every consume decision is recorded forever
-// with the exact rules it was judged under and the exact response body we returned.
+// The request ledger: history, idempotency store, and audit trail in one
+// table. Every consume decision is recorded with the exact rules it was
+// judged under and the exact response body we returned.
 export const requests = pgTable(
   'requests',
   {

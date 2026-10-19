@@ -29,8 +29,8 @@ export class ValidationError extends ApiError {
 
 export class NotFoundError extends ApiError {
   constructor(resource = 'resource') {
-    // Foreign-tenant ids land here too - deliberately indistinguishable from
-    // nonexistent ones.
+    // Foreign-tenant ids land here too - deliberately indistinguishable
+    // from nonexistent ones.
     super(404, 'NOT_FOUND', `${resource} not found`);
   }
 }

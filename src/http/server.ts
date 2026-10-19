@@ -47,8 +47,7 @@ export function createApp({ pool = getPool() }: AppDeps = {}) {
 
   const v1 = Router();
 
-  // Unauthenticated bootstrap - mounted
-  // before the auth gate,
+  // Unauthenticated bootstrap - mounted before the auth gate,
   // the ONLY unauthenticated mutation in the API.
   v1.use(publicAccountRoutes(db));
 

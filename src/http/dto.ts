@@ -3,8 +3,8 @@ import { RulesSchema } from '../domain/rules/schemas.js';
 import { MAX_RULE_VALUE } from '../domain/rules/types.js';
 
 // Every external input is parsed at the route level, strictly: unknown keys
-// are typos and fail loudly rather than being silently ignored (decision
-// #24). Bodies, params, and queries all use the same mechanism.
+// are typos and fail loudly rather than being silently ignored. Bodies,
+// params, and queries all use the same mechanism.
 
 const uuid = z.uuid();
 const label = z.string().min(1).max(200);

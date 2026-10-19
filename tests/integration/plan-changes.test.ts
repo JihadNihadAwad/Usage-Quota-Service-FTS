@@ -222,15 +222,39 @@ describe('plan changes preserve usage and apply to new requests', () => {
     // with the account plan flipped tight -> loose -> tight while the storm
     // is in flight. Whatever interleaving happens, each request must be
     // judged atomically under ONE of the two rule sets.
-    const storm = Promise.all(
-      Array.from({ length: 30 }, (_, i) => consume(key, alice.id, `flip-${i}`, 2)),
-    );
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    const storm = Array.from({ length: 30 }, (_, i) => consume(key, alice.id, `flip-${i}`, 2));
+    // supertest fires a request lazily, on its first await/then - so touch
+    // every promise first, putting all 30 requests on the wire before any
+    // waiting begins (the original Promise.all shape did this implicitly).
+    const fired = storm.map((p) => p.then(() => {}));
+    // The flips must land MID-storm, and that must not depend on machine
+    // speed. A fixed sleep raced the storm's dispatch (observed once under
+    // host load), and flipping both ways within one consume's serialized
+    // section makes every request read the final plan. Instead: flip to
+    // loose only after the first decision is in (the account lock keeps
+    // the other 29 queued behind it), and flip back only after the ledger
+    // PROVES a request was decided under the loose rules.
+    await fired[0];
     const flip1 = await patchTo(loose);
     expect(flip1.status).toBe(200);
+    let looseSeen = false;
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const { rows } = await pool.query(
+        `select count(*)::int as n from requests
+         where account_id = $1
+           and (account_rules->>'monthly_allowance')::int = 60`,
+        [accountId],
+      );
+      if (rows[0].n > 0) {
+        looseSeen = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    expect(looseSeen).toBe(true); // the storm was provably judged under loose
     const flip2 = await patchTo(tight);
     expect(flip2.status).toBe(200);
-    const results = await storm;
+    const results = await Promise.all(storm);
 
     for (const res of results) expect(res.status).toBe(200);
     const accepted = results.filter((r) => r.body.accepted === true);

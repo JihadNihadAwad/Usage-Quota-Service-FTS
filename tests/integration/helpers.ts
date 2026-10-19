@@ -22,7 +22,13 @@ export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5433/fts_test';
 
 export function createTestPool(): Pool {
-  const pool = new Pool({ connectionString: TEST_DATABASE_URL });
+  // max: 40 because the concurrency tests need headroom OVER the storm they
+  // create: the plan-flip race test holds ~30 consume transactions in flight
+  // while sending its own control calls (the plan PATCHes). With pg's default
+  // of 10, those control calls would queue BEHIND the storm's transactions
+  // and land only after it drained - silently destroying the "mid-storm"
+  // property the test exists to create. 40 leaves room for storm + controls.
+  const pool = new Pool({ connectionString: TEST_DATABASE_URL, max: 40 });
   // Same discipline as src/db/client.ts: an unhandled pool error kills the
   // process.
   pool.on('error', (err: Error) => console.error('[test-db] pool error:', err.message));

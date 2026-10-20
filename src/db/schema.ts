@@ -113,11 +113,18 @@ export const accountUsage = pgTable(
     // single deliberate string->number conversion point (pg returns bigint
     // as text).
     usedUnits: bigint('used_units', { mode: 'number' }).notNull().default(0),
+    // Accepted requests this month, maintained by the same locked update as
+    // used_units. Without it, monthly_request_cap would have to COUNT(*) the
+    // month's accepted ledger rows on every consume - a scan that grows with
+    // the month (measured 18.6 ms at 124k rows) and would collapse the
+    // per-account rate for cap-configured tenants.
+    acceptedRequests: bigint('accepted_requests', { mode: 'number' }).notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.accountId, t.monthStart] }),
     check('account_usage_nonnegative_ck', sql`${t.usedUnits} >= 0`),
+    check('account_usage_requests_nonnegative_ck', sql`${t.acceptedRequests} >= 0`),
   ],
 );
 
@@ -129,11 +136,15 @@ export const userUsage = pgTable(
       .references(() => users.id),
     monthStart: date('month_start', { mode: 'string' }).notNull(),
     usedUnits: bigint('used_units', { mode: 'number' }).notNull().default(0),
+    // Same rationale as account_usage.accepted_requests: O(1) request counts
+    // under the cap rule instead of a per-consume ledger scan.
+    acceptedRequests: bigint('accepted_requests', { mode: 'number' }).notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.monthStart] }),
     check('user_usage_nonnegative_ck', sql`${t.usedUnits} >= 0`),
+    check('user_usage_requests_nonnegative_ck', sql`${t.acceptedRequests} >= 0`),
   ],
 );
 

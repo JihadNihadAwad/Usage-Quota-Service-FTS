@@ -18,11 +18,12 @@ import { isUniqueViolation, uniqueViolationConstraint } from '../lib/pg-errors.j
  *   3. SELECT ... FOR UPDATE the account_usage row   <- lock #1 (serialization point)
  *   4. SELECT ... FOR UPDATE the user_usage row      <- lock #2 (fixed order: deadlock-free)
  *   5. idempotency check under the locks (authoritative)
- *   6. count accepted requests this month (only if the cap rule is configured)
- *   7. pure evaluation over the locked snapshot
- *   8. if accepted: consume the full amount at both levels (RETURNING the new totals)
- *   9. insert the ledger row: decision + rule snapshots + the exact response body
- *  10. COMMIT
+ *   6. pure evaluation over the locked snapshot (used_units and accepted
+ *      request counts both live on the counter rows, so every rule reads O(1))
+ *   7. if accepted: consume the full amount at both levels, incrementing the
+ *      request counts in the same UPDATE (RETURNING the new totals)
+ *   8. insert the ledger row: decision + rule snapshots + the exact response body
+ *   9. COMMIT
  *
  * Why READ COMMITTED + explicit locks rather than SERIALIZABLE: our
  * contention pattern is a single hot row per account; pessimistic locking
@@ -199,9 +200,11 @@ async function consumeInTransaction(
   // 3. Lock the account counter row. This is the deliberate per-account
   // serialization point: every consume for one account funnels through it,
   // which is what makes idempotency checks and limit decisions race-free.
+  // The row also carries this month's accepted-request count, so the
+  // monthly_request_cap rule reads O(1) instead of counting ledger rows.
   const accountLocked = (
     await tx.execute(sql`
-      select used_units from account_usage
+      select used_units, accepted_requests from account_usage
       where account_id = ${accountId} and month_start = ${month}
       for update
     `)
@@ -209,18 +212,20 @@ async function consumeInTransaction(
   if (accountLocked === undefined) throw new Error('account_usage row missing after lazy insert');
   // bigint arrives from the driver as a string - the deliberate conversion point.
   const accountUsed = Number(accountLocked.used_units);
+  const accountAcceptedRequests = Number(accountLocked.accepted_requests);
 
   // 4. Lock the user counter row - ALWAYS after the account row. The fixed
   // global order (account -> user) makes deadlock cycles impossible.
   const userLocked = (
     await tx.execute(sql`
-      select used_units from user_usage
+      select used_units, accepted_requests from user_usage
       where user_id = ${input.userId} and month_start = ${month}
       for update
     `)
   ).rows[0];
   if (userLocked === undefined) throw new Error('user_usage row missing after lazy insert');
   const userUsed = Number(userLocked.used_units);
+  const userAcceptedRequests = Number(userLocked.accepted_requests);
 
   // 5. Idempotency under lock - the authoritative check. Concurrent
   // duplicates that both missed the fast path serialize here.
@@ -242,34 +247,10 @@ async function consumeInTransaction(
     );
   }
 
-  // 6. Accepted-request counts this month, only when the request-cap rule is
-  // configured at that level. The partial indexes make these index-only
-  // counts; skipping them when unused keeps the common path lean.
-  const accountAcceptedRequests =
-    accountRules.monthly_request_cap === undefined
-      ? 0
-      : Number(
-          (
-            await tx.execute(sql`
-              select count(*) as n from requests
-              where account_id = ${accountId} and month_start = ${month} and accepted
-            `)
-          ).rows[0]?.n ?? 0,
-        );
-  const userAcceptedRequests =
-    userRules.monthly_request_cap === undefined
-      ? 0
-      : Number(
-          (
-            await tx.execute(sql`
-              select count(*) as n from requests
-              where user_id = ${input.userId} and month_start = ${month} and accepted
-            `)
-          ).rows[0]?.n ?? 0,
-        );
-
-  // 7. The pure evaluator - everything above existed to produce this
-  // snapshot under lock (src/domain/decision.ts).
+  // 6. The pure evaluator - everything above existed to produce this
+  // snapshot under lock (src/domain/decision.ts). The accepted-request
+  // counts come from the counter rows themselves (incremented on accept,
+  // step 7), so no rule ever scans the ledger.
   const decision: Decision = evaluateConsume(
     input.units,
     {
@@ -286,16 +267,20 @@ async function consumeInTransaction(
     },
   );
 
-  // 8. If accepted, consume the FULL amount at both levels (the consume
-  // model is all-or-nothing). RETURNING hands back the authoritative post-update
-  // totals - no application-side arithmetic, no read-modify-write drift.
-  // The CHECK (used_units >= 0) constraints backstop the ledger.
+  // 7. If accepted, consume the FULL amount at both levels (the consume
+  // model is all-or-nothing) and count the request once at each level.
+  // RETURNING hands back the authoritative post-update totals - no
+  // application-side arithmetic, no read-modify-write drift. The CHECK
+  // (>= 0) constraints backstop the ledger.
   let accountUsedAfter = accountUsed;
   let userUsedAfter = userUsed;
   if (decision.accepted) {
     const accountUpdated = (
       await tx.execute(sql`
-        update account_usage set used_units = used_units + ${input.units}, updated_at = now()
+        update account_usage
+        set used_units = used_units + ${input.units},
+            accepted_requests = accepted_requests + 1,
+            updated_at = now()
         where account_id = ${accountId} and month_start = ${month}
         returning used_units
       `)
@@ -305,7 +290,10 @@ async function consumeInTransaction(
 
     const userUpdated = (
       await tx.execute(sql`
-        update user_usage set used_units = used_units + ${input.units}, updated_at = now()
+        update user_usage
+        set used_units = used_units + ${input.units},
+            accepted_requests = accepted_requests + 1,
+            updated_at = now()
         where user_id = ${input.userId} and month_start = ${month}
         returning used_units
       `)
@@ -314,7 +302,7 @@ async function consumeInTransaction(
     userUsedAfter = Number(userUpdated.used_units);
   }
 
-  // 9. The response body - built once, stored in the ledger, returned to the
+  // 8. The response body - built once, stored in the ledger, returned to the
   // caller. Replays get this exact object back (content-identical).
   const response: ConsumeResponseBody = {
     request_id: input.requestId,
@@ -328,7 +316,7 @@ async function consumeInTransaction(
     evaluated: { account_rules: accountRules, user_rules: userRules },
   };
 
-  // 10. The ledger row: the decision, the rule snapshots it was judged under,
+  // 9. The ledger row: the decision, the rule snapshots it was judged under,
   // and the exact response body. The table's CHECK constraints structurally
   // enforce "a rejection consumes nothing".
   await tx.execute(sql`

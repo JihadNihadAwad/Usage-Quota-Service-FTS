@@ -7,10 +7,13 @@
 //   1. account counter == sum of user counters == sum of accepted ledger units
 //   2. every rejected ledger row consumed nothing
 //   3. no counter ever exceeded its plan allowance
+//   4. the maintained accepted-request counters match the ledger's accepted
+//      row counts at both levels
 // A mismatch means the stage corrupted accounting and fails the run,
 // regardless of latency results.
 
 import { readFileSync } from 'node:fs';
+import type { PoolClient } from 'pg';
 import { Pool } from 'pg';
 import { fileURLToPath } from 'node:url';
 
@@ -34,24 +37,31 @@ const month = `${new Date().toISOString().slice(0, 7)}-01`;
 
 const pool = new Pool({ connectionString: DATABASE_URL });
 
-async function one(query: string, params: unknown[]): Promise<Record<string, unknown>> {
-  const result = await pool.query(query, params);
+async function one(
+  client: PoolClient,
+  query: string,
+  params: unknown[],
+): Promise<Record<string, unknown>> {
+  const result = await client.query(query, params);
   const row = result.rows[0];
   if (row === undefined) throw new Error(`no rows from: ${query}`);
   return row as Record<string, unknown>;
 }
 
-/** All invariant checks for one account. Prints a line per finding. */
-async function checkAccount(name: string, accountId: string): Promise<boolean> {
+/** All invariant checks for one account, on one snapshot. Prints a line per finding. */
+async function checkAccount(client: PoolClient, name: string, accountId: string): Promise<boolean> {
   const params = [accountId, month];
 
-  const accountRow = await pool.query(
-    `select used_units from account_usage where account_id = $1 and month_start = $2`,
+  const accountRow = await client.query(
+    `select used_units, accepted_requests from account_usage
+     where account_id = $1 and month_start = $2`,
     params,
   );
   const accountUsed = Number(accountRow.rows[0]?.used_units ?? 0);
+  const accountRequests = Number(accountRow.rows[0]?.accepted_requests ?? 0);
 
   const userRow = await one(
+    client,
     `select coalesce(sum(uu.used_units), 0) as total
      from user_usage uu
      join users u on u.id = uu.user_id
@@ -61,6 +71,7 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
   const userSum = Number(userRow.total);
 
   const ledgerRow = await one(
+    client,
     `select coalesce(sum(units_consumed), 0) as units, count(*) as accepted_count
      from requests
      where account_id = $1 and month_start = $2 and accepted`,
@@ -70,6 +81,7 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
   const acceptedCount = Number(ledgerRow.accepted_count);
 
   const rejectedRow = await one(
+    client,
     `select count(*) as bad
      from requests
      where account_id = $1 and month_start = $2 and not accepted and units_consumed <> 0`,
@@ -78,6 +90,7 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
   const badRejections = Number(rejectedRow.bad);
 
   const allowanceRow = await one(
+    client,
     `select (p.rules->>'monthly_allowance')::bigint as allowance
      from accounts a join plans p on p.id = a.account_plan_id
      where a.id = $1`,
@@ -86,6 +99,7 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
   const accountAllowance = Number(allowanceRow.allowance);
 
   const overRow = await one(
+    client,
     `select count(*) as over
      from user_usage uu
      join users u on u.id = uu.user_id
@@ -97,6 +111,23 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
   );
   const overAllowance = Number(overRow.over);
 
+  // The request counters on the usage rows must equal the ledger's accepted
+  // row counts - they are incremented by the same locked update that
+  // charges units, so any drift is a consume-path bug.
+  const requestCountersRow = await one(
+    client,
+    `select
+       (select count(*) from requests
+        where account_id = $1 and month_start = $2 and accepted) as ledger_account,
+       (select coalesce(sum(uu.accepted_requests), 0) from user_usage uu
+        join users u on u.id = uu.user_id
+        where u.account_id = $1 and uu.month_start = $2) as users_total
+     from (select 1) as x`,
+    params,
+  );
+  const ledgerAccountRequests = Number(requestCountersRow.ledger_account);
+  const usersTotalRequests = Number(requestCountersRow.users_total);
+
   console.log(`[invariants] account ${name} (${accountId}), month ${month}`);
   console.log(
     `[invariants] account counter: ${accountUsed} / sum of user counters: ${userSum} / accepted ledger units: ${ledgerSum} (${acceptedCount} accepted requests)`,
@@ -106,6 +137,10 @@ async function checkAccount(name: string, accountId: string): Promise<boolean> {
   if (accountUsed !== userSum) failures.push(`account counter != sum of user counters`);
   if (accountUsed !== ledgerSum) failures.push(`account counter != accepted ledger units`);
   if (userSum !== ledgerSum) failures.push(`sum of user counters != accepted ledger units`);
+  if (accountRequests !== ledgerAccountRequests)
+    failures.push(`account request counter ${accountRequests} != ${ledgerAccountRequests} accepted ledger rows`);
+  if (accountRequests !== usersTotalRequests)
+    failures.push(`account request counter != sum of user request counters`);
   if (badRejections !== 0) failures.push(`${badRejections} rejected rows consumed units`);
   if (accountUsed > accountAllowance) failures.push(`account counter exceeds its allowance`);
   if (overAllowance !== 0) failures.push(`${overAllowance} user counters exceed their allowance`);
@@ -129,8 +164,20 @@ async function main(): Promise<void> {
     return;
   }
   let allPassed = true;
-  for (const account of accounts) {
-    allPassed = (await checkAccount(account.name, account.id)) && allPassed;
+  // One REPEATABLE READ transaction = one snapshot for every check. The
+  // checker runs right after a stage, while its last requests may still be
+  // committing; with auto-commit queries the checker could read a counter
+  // before a commit and the ledger after it, and report its own read skew
+  // as a mismatch.
+  const client = await pool.connect();
+  try {
+    await client.query('begin isolation level repeatable read');
+    for (const account of accounts) {
+      allPassed = (await checkAccount(client, account.name, account.id)) && allPassed;
+    }
+    await client.query('commit');
+  } finally {
+    client.release();
   }
   process.exitCode = allPassed ? 0 : 1;
 }

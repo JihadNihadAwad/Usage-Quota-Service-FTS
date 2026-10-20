@@ -1,0 +1,50 @@
+=== The monthly_request_cap count queries, before they were removed ===
+
+Measured 2026-10-20 on the loadtest database, after the request-count
+counters were introduced. Until that change, every consume for a plan with
+monthly_request_cap configured ran one of these COUNT(*) queries inside
+the serialized transaction; the scan grows with the month's accepted rows.
+
+Loadtest shape: the user plans carry all three rules, the account plans
+only two - so the user-level count ran on every loadtest consume (small,
+~1.2k rows per user), while the account-level count is what a cap-bearing
+account plan would have paid. Account 1 had 124,646 accepted requests in
+the month at measurement time; user load-001 of that account had
+15017 accepted.
+
+The replacement: accepted_requests columns on account_usage/user_usage,
+maintained by the same locked UPDATE that charges units - O(1) under the
+lock, verified against these same ledger counts by check-invariants.ts
+after every stage.
+
+=== account-level count (account 1, 124,646 accepted rows) ===
+                                                                              QUERY PLAN                                                                               
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=9519.19..9519.20 rows=1 width=8) (actual time=18.314..18.320 rows=1 loops=1)
+   Buffers: shared hit=2223
+   ->  Index Only Scan using requests_account_month_accepted_idx on requests  (cost=0.42..9208.20 rows=124397 width=0) (actual time=0.067..13.582 rows=124646 loops=1)
+         Index Cond: ((account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid) AND (month_start = '2026-10-01'::date))
+         Heap Fetches: 16132
+         Buffers: shared hit=2223
+ Planning:
+   Buffers: shared hit=219
+ Planning Time: 1.709 ms
+ Execution Time: 18.409 ms
+(10 rows)
+
+
+=== user-level count (one user of account 1, ~1.2k accepted rows) ===
+                                                                           QUERY PLAN                                                                            
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=4746.16..4746.17 rows=1 width=8) (actual time=2.076..2.080 rows=1 loops=1)
+   Buffers: shared hit=176
+   ->  Index Only Scan using requests_user_month_accepted_idx on requests  (cost=0.29..4708.43 rows=15091 width=0) (actual time=0.067..1.519 rows=15017 loops=1)
+         Index Cond: ((user_id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8'::uuid) AND (month_start = '2026-10-01'::date))
+         Heap Fetches: 193
+         Buffers: shared hit=176
+ Planning:
+   Buffers: shared hit=219
+ Planning Time: 1.299 ms
+ Execution Time: 2.130 ms
+(10 rows)
+

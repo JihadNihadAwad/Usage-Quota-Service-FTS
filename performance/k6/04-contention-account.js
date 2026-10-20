@@ -34,8 +34,8 @@ export function setup() {
 }
 
 export default function (data) {
-  const key = state.account.key;
+  const tenant = state.accounts[0];
   // VU n owns user n - user rows never collide; only the account row does.
-  const user = state.users[(__VU - 1) % state.users.length];
-  check(consume(key, user, requestId('a', data), 1), consumeChecks());
+  const user = tenant.users[(__VU - 1) % tenant.users.length];
+  check(consume(tenant.key, user, requestId('a', data), 1), consumeChecks());
 }

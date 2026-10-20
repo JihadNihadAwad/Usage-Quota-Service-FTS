@@ -24,22 +24,23 @@ export const options = {
 export const handleSummary = summary('01-smoke');
 
 export default function () {
-  const key = state.account.key;
+  const tenant = state.accounts[0];
+  const key = tenant.key;
   const run = `smoke-${Date.now().toString(36)}`;
 
-  const first = consume(key, state.users[0], `${run}-1`, 1);
+  const first = consume(key, tenant.users[0], `${run}-1`, 1);
   check(first, {
     'first consume accepted': (r) => r.status === 200 && r.json('accepted') === true,
     'full amount consumed': (r) => r.json('units_consumed') === 1,
   });
 
-  const second = consume(key, state.users[1], `${run}-2`, 2);
+  const second = consume(key, tenant.users[1], `${run}-2`, 2);
   check(second, {
     'second user accepted': (r) => r.status === 200 && r.json('accepted') === true,
   });
 
   // 5000 units exceeds the loadtest user plan's max_per_request (1000).
-  const rejected = consume(key, state.users[0], `${run}-3`, 5000);
+  const rejected = consume(key, tenant.users[0], `${run}-3`, 5000);
   check(rejected, {
     'oversized request rejected': (r) => r.status === 200 && r.json('accepted') === false,
     'rejection consumes nothing': (r) => r.json('units_consumed') === 0,
@@ -49,7 +50,7 @@ export default function () {
     },
   });
 
-  const replay = consume(key, state.users[0], `${run}-1`, 1);
+  const replay = consume(key, tenant.users[0], `${run}-1`, 1);
   check(replay, {
     'replay returns the same decision': (r) => r.status === 200 && r.json('accepted') === true,
     'replay reports the original charge': (r) => r.json('units_consumed') === 1,

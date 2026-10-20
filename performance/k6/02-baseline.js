@@ -36,12 +36,13 @@ export function setup() {
 }
 
 export default function (data) {
-  const key = state.account.key;
+  const tenant = state.accounts[0];
+  const key = tenant.key;
   const roll = __ITER % 10;
 
   if (roll < 7) {
     // 70%: consume, cycling through all users.
-    const user = state.users[__ITER % state.users.length];
+    const user = tenant.users[__ITER % tenant.users.length];
     check(consume(key, user, requestId('c', data), 1), consumeChecks());
   } else if (roll < 9) {
     // 20%: account usage read.

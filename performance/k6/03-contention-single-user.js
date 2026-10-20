@@ -29,6 +29,6 @@ export function setup() {
 }
 
 export default function (data) {
-  const key = state.account.key;
-  check(consume(key, state.users[0], requestId('u', data), 1), consumeChecks());
+  const tenant = state.accounts[0];
+  check(consume(tenant.key, tenant.users[0], requestId('u', data), 1), consumeChecks());
 }

@@ -57,12 +57,13 @@ export function setup() {
 }
 
 export function traffic(data) {
-  const key = state.account.key;
+  const tenant = state.accounts[0];
+  const key = tenant.key;
   const roll = __ITER % 20;
 
   if (roll < 14) {
     // 70%: consume, spread across users.
-    const user = state.users[(__VU * 7 + __ITER) % state.users.length];
+    const user = tenant.users[(__VU * 7 + __ITER) % tenant.users.length];
     check(consume(key, user, requestId('t', data), 1), consumeChecks());
   } else if (roll < 17) {
     // 15%: account usage.
@@ -80,9 +81,14 @@ export function traffic(data) {
 }
 
 export function planUpdate(data) {
-  const key = state.account.key;
+  const tenant = state.accounts[0];
+  const key = tenant.key;
+  // The state file carries user ids, not plan ids - look the plan up
+  // through the API, as a client would.
+  const user = http.get(`${BASE_URL}/users/${tenant.users[0]}`, headers(key));
+  const planId = user.json('plan.id');
   const res = http.patch(
-    `${BASE_URL}/plans/${state.userPlanId}`,
+    `${BASE_URL}/plans/${planId}`,
     JSON.stringify({
       rules: {
         monthly_allowance: 1000000,

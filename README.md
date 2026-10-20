@@ -59,28 +59,33 @@ Measured on the development machine used for the committed benchmark runs
 (4-core laptop, Docker Desktop, api and db each capped at 2 CPUs; raw
 captures and analysis in [performance/README.md](performance/README.md)):
 
-| Load                                            | Measured result                                                                                                  |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| 2 concurrent clients, mixed traffic             | 231 requests/s, p95 15 ms, p99 19 ms                                                                       |
-| 100 concurrent clients, one account (100 users) | 167 decisions/s — the per-account rate: consumes for one account serialize on its counter row (~6 ms each) |
-| 100 concurrent clients, two accounts            | 280 decisions/s — accounts are independent; each sustains its full rate                                   |
-| 100 concurrent clients, eight accounts          | 417 decisions/s aggregate; 400 clients add nothing — host CPU is the limit on this machine                 |
-| Reads (usage, history)                          | no counter lock: in the mixed stage they add ~59 requests/s on top of ~141 consume/s                        |
+| Load                                              | Measured result                                                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 10 concurrent clients, eight accounts             | 412 decisions/s — this deployment's ceiling is already reached: host CPU                              |
+| 1000 concurrent clients, eight accounts          | 366 decisions/s, p95 3.2 s — throughput flat from 10 clients to 1000, zero failures, queueing only   |
+| Fixed arrival 500 → 1500 req/s                    | ~330/s served; the rest queues (no errors) — operating past capacity is latency, not failure          |
+| 100 concurrent clients, one account (100 users)   | 167 decisions/s — the per-account rate: one account's consumes serialize on its counter row (~6.8 ms) |
+| Reads (usage, history)                            | no counter lock: in the mixed stage they add ~59 requests/s on top of ~141 consume/s                  |
 
-Reading the numbers: aggregate capacity grows with the number of active
-accounts, because each account has its own counter row and its own lock. The
-limits, in the order they bind, are the per-account serialization
-(~165 decisions/s per account), the api's Postgres connection pool
-(`POOL_MAX`; 10 is pg's default), and host CPU (the ~360–420/s ceiling on
-this machine, with both containers near their CPU quotas). Concentrated
-load — many clients on one user or one account — does not fail: requests
-queue, every decision is recorded, and accounting stays exact.
+Reading the numbers: two things bound this service, and they are different
+axes. Per **account**, consumes serialize on the account's counter row at
+~165 decisions/s — irrelevant in practice, since the largest plan (Pro)
+sustains 0.04 requests/s; the ceiling is ~140× what any plan can spend.
+In **aggregate**, throughput scales with concurrency until host CPU
+saturates — ~360–420 decisions/s on this laptop with a single api process
+(Node runs its JS on one thread; more capacity means more api processes,
+and correctness already lives in Postgres row locks, not in the api).
+Below saturation, throughput = concurrent clients ÷ latency; at
+saturation, wait = concurrent clients ÷ throughput. Past saturation
+nothing fails — requests queue and accounting stays exact, verified by a
+SQL invariant check after every benchmark stage.
 
 After every benchmark stage a SQL check recomputes the accounting per
 account (`account counter == Σ user counters == Σ accepted ledger units`;
 the maintained request counters are checked against the ledger too); all
-stages passed it. Thresholds, per-stage tables, and reproduction
-commands: [performance/README.md](performance/README.md).
+stages passed it. Capacity curves, the overload run, cost breakdown
+(round trips vs durability vs execution), and reproduction commands:
+[performance/README.md](performance/README.md).
 
 ## Configuration
 
@@ -94,7 +99,7 @@ from the environment); on a host install, put them in `.env` (see
 | `DATABASE_URL`    | `postgres://postgres:postgres@db:5432/fts`     | Postgres connection string (host install: point it at your database)                              |
 | `PORT`            | `3000`                                         | API listen port                                                                                   |
 | `LOG_LEVEL`       | `info`                                         | `debug` adds per-request logs                                                                    |
-| `POOL_MAX`        | `10` (pg's default)                            | Postgres connections per api process. The first shared limit under multi-account load; see the performance section |
+| `POOL_MAX`        | `10` (pg's default)                            | Postgres connections per api process. Only binds once the host has several times this machine's CPU — see the performance section |
 | `CLIENT_PORT`     | `3001`                                         | Demo client port                                                                                  |
 | `USAGE_API_URL`   | `http://localhost:3000/v1`                     | Where the demo client finds the API                                                              |
 
@@ -476,11 +481,12 @@ and the reasoning:
 ## Known limitations
 
 - **Per-account throughput ceiling** — ~165 decisions/s for a single
-  account (its consumes serialize on its counter row). Aggregate capacity
-  grows with the number of active accounts until the connection pool or host
-  CPU binds; measured headroom is ~140× the largest predefined plan's monthly
-  allowance. Raising it further would mean batching the consume's statements
-  or sharding counters, both declined for inspectability
+  account (its consumes serialize on its counter row, ~140× the largest
+  predefined plan's sustainable rate). Aggregate capacity is bounded by
+  host CPU and the single api process (one Node thread for JS); measured
+  headroom is two orders of magnitude beyond what any plan can spend.
+  Raising it further would mean batching the consume's statements
+  (measured 1.6×) or sharding counters, both declined for inspectability
   ([analysis](performance/README.md)).
 - **Single instance** — correctness leans on database row locks, so a second
   api process would work but the design has not been validated for horizontal

@@ -1,68 +1,45 @@
 # Usage Quota Service
 
-A usage metering and quota service: accounts, users, and plans with
-configurable usage rules, a request ledger that records every quota
-decision, and an HTTP API for metering usage against monthly limits.
+A usage metering and quota service: applications report usage for their end
+users against monthly limits defined by plans, and every quota decision is
+recorded in a per-account ledger that also serves idempotent retries and
+history queries.
 
 ```
 docker compose up --build
 ```
 
-It starts PostgreSQL, the API (:3000), and a demo web client (:3001); the
-API applies its schema migrations and seeds its predefined plans on boot.
-The demo client at http://localhost:3001 runs scripted scenarios against the
-API; the same calls are documented below.
+The stack has three services: PostgreSQL, the API (port 3000), and a demo
+web client (port 3001). On startup the API applies its schema migrations and
+seeds the predefined plans. The demo client exercises the API with the same
+requests documented in the HTTP API section.
 
 ## Contents
 
-- [At a glance](#at-a-glance) — measured numbers, what they mean, the bottleneck
-- [How it works](#how-it-works) — accounts → users → plans → rules
+- [Overview](#overview) — the model: accounts, users, plans, consume
 - [Quickstart](#quickstart)
+- [Performance](#performance) — measured throughput, latency, and limits
 - [Authentication](#authentication)
-- [API tour](#api-tour) — bootstrap, consume, quota rejections, replays, usage, history
+- [HTTP API](#http-api) — bootstrap, consume, quota rejections, replays, usage, history
 - [Plans](#plans) — the predefined table, custom plans, rule semantics
 - [Design notes](#design-notes)
-- [Performance](#performance)
 - [Testing](#testing)
 - [Project layout](#project-layout)
 - [Assumptions](#assumptions)
 - [Known limitations](#known-limitations)
 
-Benchmark methodology, raw captures, and analysis:
-[`performance/README.md`](performance/README.md).
+## Overview
 
-## At a glance
-
-Measured on the machine that produced the committed evidence (4-core laptop,
-Docker Desktop, api and db each capped at 2 CPUs — [method and raw
-captures](performance/README.md)):
-
-| What was asked                              | Measured answer                                                                                                                                                                         |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Steady-state latency (2 VUs)                | p95 **16 ms**, p99 23 ms at 211 requests/s                                                                                                                                              |
-| One user under 25 concurrent callers        | 155/s; requests queue, no errors, accounting exact                                                                                                                                      |
-| One account, 100 callers across 100 users   | **140/s ceiling** — every consume for an account serializes on that account's counter row (~7 ms serialized section)                                                                    |
-| Read endpoints under a saturated write path | 191/s total in the mixed stage (~134/s consumes + ~57/s reads); reads do not take the counter lock                                                                                      |
-| **How many accounts at once**               | **8 tenants, 325–412 decisions/s total, zero accounting violations** — each account carries its own lock                                                                                |
-| Where the bottleneck is                     | in binding order: (1) the per-account lock at ~140–163/s/tenant, (2) the api's Postgres pool — raising it 10 → 50 bought +22% with zero code change, (3) host CPU at the ~412/s plateau |
-
-The numbers on this laptop are indicative; the relationships between stages
-are the significant results. The scaling experiment (three operating points,
-docker-stats telemetry) is documented in
-[performance/README.md](performance/README.md).
-
-## How it works
-
-- An **account** is a tenant: it bootstraps over an unauthenticated endpoint
-  and receives an API key.
-- A **user** is the calling application's end user (identified by that
-  application's own `external_id`, not a login).
-- A **plan** holds usage rules. Plans come in two scopes — **account plans**
-  cap the tenant as a whole, **user plans** cap each end user — and the two
-  combine: a consume must pass **both** the account's plan and the user's plan.
-- A **consume** is all-or-nothing: it is judged under both plans' rule sets in
-  one database transaction, and every decision — accepted or rejected — is
-  recorded in a ledger with the exact rules it was judged under.
+- An **account** is a tenant, created through an unauthenticated bootstrap
+  endpoint that returns an API key.
+- A **user** is one of the account's end users, identified by the calling
+  application's own `external_id`.
+- A **plan** is a named set of usage rules at one scope: account plans limit
+  the tenant as a whole, user plans limit each end user. A consume must pass
+  both the account's plan and the user's plan.
+- A **consume** records usage. It is all-or-nothing, evaluated in one
+  transaction, and every decision — accepted or rejected — is written to the
+  account's ledger with the rules it was evaluated under.
 
 ## Quickstart
 
@@ -74,6 +51,34 @@ Health endpoints: `GET /healthz` (process up), `GET /readyz` (db reachable).
 
 Without Docker: `npm ci && npm run migrate && npm run seed && npm run dev`
 against any PostgreSQL 17 (`DATABASE_URL` in `.env`; see `.env.example`).
+
+## Performance
+
+Measured on the development machine used for the committed benchmark runs
+(4-core laptop, Docker Desktop, api and db each capped at 2 CPUs; raw
+captures and analysis in [performance/README.md](performance/README.md)):
+
+| Load                                            | Measured result                                                                                                  |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 2 concurrent clients, mixed traffic             | 211 requests/s, p95 16 ms, p99 23 ms                                                                             |
+| 100 concurrent clients, one account (100 users) | 140 decisions/s — the per-account rate: consumes for one account serialize on its counter row (~7 ms each)       |
+| 100 concurrent clients, two accounts            | 275 decisions/s — accounts are independent; each sustains its full rate (~140/s)                                 |
+| 100 concurrent clients, eight accounts          | 325 decisions/s at the default pool of 10 db connections; 396/s with `POOL_MAX=50`; 412/s plateau at 200 clients |
+| Reads (usage, history)                          | no counter lock: in the mixed stage they add ~57 requests/s on top of ~134 consume/s                             |
+
+Reading the numbers: aggregate capacity grows with the number of active
+accounts, because each account has its own counter row and its own lock. The
+limits, in the order they bind, are the per-account serialization
+(~140–163 decisions/s per account), the api's Postgres connection pool
+(`POOL_MAX`; +22% from configuration alone), and host CPU (the 412/s plateau,
+with the db container ~70% busy). Concentrated load — many clients on one
+user or one account — does not fail: requests queue, every decision is
+recorded, and accounting stays exact.
+
+After every benchmark stage a SQL check recomputes the accounting per
+account (`account counter == Σ user counters == Σ accepted ledger units`);
+all stages passed it. Thresholds, per-stage tables, and reproduction
+commands: [performance/README.md](performance/README.md).
 
 ## Authentication
 
@@ -87,7 +92,7 @@ The key is returned **exactly once**, in the bootstrap response; only its
 SHA-256 hash is stored. There is no key retrieval or rotation — losing it
 means bootstrapping a new account (documented in [limitations](#known-limitations)).
 
-## API tour
+## HTTP API
 
 Base URL: `http://localhost:3000/v1`.
 
@@ -95,14 +100,14 @@ Base URL: `http://localhost:3000/v1`.
 
 ```bash
 curl -s -X POST http://localhost:3000/v1/accounts \
-  -H 'Content-Type: application/json' -d '{"name":"Readme Tour Co"}'
+  -H 'Content-Type: application/json' -d '{"name":"Readme Example Co"}'
 ```
 
 ```json
 {
   "account": {
     "id": "568b0317-4229-447a-b675-ec317dd4e7ce",
-    "name": "Readme Tour Co",
+    "name": "Readme Example Co",
     "plan": {
       "id": "11111111-1111-4111-8111-111111111111",
       "name": "Starter",
@@ -302,8 +307,8 @@ History pages newest-first via a keyset cursor (`next_cursor`; pass it back as
 `?cursor=`) — stable under concurrent inserts, unlike OFFSET. Filter with
 `?user_id=`, `?month=`, `?outcome=accepted|rejected`.
 
-The demo client at :3001 runs thirteen scripted scenarios covering these
-calls plus tenant isolation, plan immutability, and scope mismatch errors.
+The demo client runs thirteen scripted scenarios that cover these calls
+plus tenant isolation, plan immutability, and scope mismatch errors.
 
 ## Plans
 
@@ -331,8 +336,9 @@ answer `403 PLAN_IMMUTABLE`). Names are unique per account and scope.
 | `max_per_request`     | units in any single request                           | `requested > cap`              |
 | `monthly_request_cap` | accepted requests per UTC month, independent of units | `accepted count already ≥ cap` |
 
-- `monthly_allowance` and `max_per_request` are the two core rules; `monthly_request_cap` is an additional rule implemented the same
-  way. The registry is extensible: one file per rule, one registration line,
+- `monthly_allowance` and `max_per_request` are the two core rules;
+  `monthly_request_cap` is an additional rule implemented the same way.
+  The registry is extensible: one file per rule, one registration line,
   one precedence slot — the evaluator does not change.
 - An unconfigured rule imposes no constraint; a plan must configure at least
   one rule.
@@ -351,10 +357,10 @@ answer `403 PLAN_IMMUTABLE`). Names are unique per account and scope.
 - Downgrades below existing usage zero out `remaining` and reject further
   consumption at that level; upgrades re-open the difference immediately.
 - Past history is untouched, and each ledger row keeps a snapshot of the exact
-  rules it was judged under, so old decisions stay explainable after edits.
+  rules it was evaluated under, so old decisions stay explainable after edits.
 - A plan change landing while consumes are in flight is safe: each request is
-  judged atomically under exactly one rule set (proven by a concurrency test
-  that flips plans mid-storm and re-derives the guarantee from the ledger).
+  evaluated under exactly one rule set (a concurrency test flips plans
+  mid-storm and re-derives the guarantee from the ledger).
 
 ## Design notes
 
@@ -370,26 +376,6 @@ answer `403 PLAN_IMMUTABLE`). Names are unique per account and scope.
 - **SHA-256-hashed keys:** a fast hash is adequate here because the input is
   unguessable (unlike a password).
 
-## Performance
-
-Methodology, raw captures, and analysis:
-[`performance/README.md`](performance/README.md). Summary:
-
-Seven k6 stages run against the real compose stack, and after every stage a
-checker recomputes the accounting straight from SQL
-(`account counter == Σ user counters == Σ accepted ledger units`) — a stage
-that corrupts accounting fails regardless of its latency numbers. Baseline is
-16 ms p95 at 211/s. Contention stages put the per-account ceiling at
-~140–163/s and attribute it to the account row's lock, not CPU (Little's law
-matches the measured queue latency within 1%). The multi-account stages show
-the ceiling is per-account: eight tenants sustain 325–412/s combined, with the
-api's connection pool and then host CPU as the next limits. A query-plan
-audit produced one fix (history pagination seq-scanned; a one-line
-`NULLS LAST` alignment made a 21-row page 108× faster), and a round-trip
-probe showed the consume path is statement-round-trip-bound; batching the 12
-statements (~5× headroom) was measured and declined for inspectability.
-Reproduce with the `bench:*` scripts (see performance/README.md).
-
 ## Testing
 
 ```bash
@@ -400,13 +386,13 @@ npm run test:integration # 53 integration tests against real Postgres
 npm run test:persistence # data survives an api container restart
 ```
 
-Integration covers the critical behaviors:
-the all-or-nothing two-level consume, idempotency (including concurrent
-first-submissions of the same `request_id`), tenant isolation, plan changes
-(preserving usage, zero floor, history intact), a plan flip landing
-mid-consume-storm, keyset pagination stability under concurrent inserts, and
-the full error envelope. The persistence probe restarts the real api container
-and verifies a retried request replays instead of double-charging.
+Integration covers the critical behaviors: the all-or-nothing two-level
+consume, idempotency (including concurrent first-submissions of the same
+`request_id`), tenant isolation, plan changes (preserving usage, zero floor,
+history intact), a plan flip landing mid-consume-storm, keyset pagination
+stability under concurrent inserts, and the error envelope. The persistence
+probe restarts the real api container and verifies a retried request replays
+instead of double-charging.
 
 Every benchmark stage additionally runs `npm run bench:invariants`, which
 recomputes accounting from raw SQL for all eight load-test accounts.
@@ -427,7 +413,8 @@ scripts/           persistence probe
 
 ## Assumptions
 
-Choices the spec left open, each with its reasoning:
+Where the interface leaves behavior unspecified, this is the chosen behavior
+and the reasoning:
 
 1. **`Authorization: Bearer <key>`** — the conventional, explicit header form.
 2. **Quota rejections are HTTP 200** with a decision body — the decision is
@@ -435,8 +422,8 @@ Choices the spec left open, each with its reasoning:
 3. **Foreign-tenant resources → 404**, identical to nonexistent ones.
 4. **Idempotency is per account** — `(account_id, request_id)` is the key; two
    accounts may reuse the same id.
-5. **`request_id`s are retained without expiry** — the spec defines no
-   pruning semantics; retention would be an operational decision.
+5. **`request_id`s are retained without expiry** — no pruning semantics;
+   retention would be an operational decision.
 6. **Usage rows are lazy** — absent row = zero usage for that month.
 7. **Months are UTC** — window math stays pure.
 8. **Bootstrap is unauthenticated** — the only unauthenticated endpoint, and
@@ -453,16 +440,18 @@ Choices the spec left open, each with its reasoning:
     requests are validation errors.
 15. **Replays are content-identical, not byte-identical** — JSONB normalizes
     key order; don't depend on key order.
-16. **A consume overlapping a plan change linearizes on either side** — both
-    orders are valid readings of "changes apply to new requests".
+16. **A consume that overlaps a plan change is evaluated under exactly one
+    rule set** — whichever was in effect when the transaction read the plans.
 
 ## Known limitations
 
-- **Per-account throughput ceiling** — ~140–163 decisions/s per account by
-  design (one serialized section per account row). Measured headroom is
-  ~100× the largest predefined plan's monthly allowance; scaling further
-  would mean batching the consume's statements or sharding counters, both
-  declined deliberately ([analysis](performance/README.md)).
+- **Per-account throughput ceiling** — ~140–163 decisions/s for a single
+  account (its consumes serialize on its counter row). Aggregate capacity
+  grows with the number of active accounts until the connection pool or host
+  CPU binds; measured headroom is ~100× the largest predefined plan's monthly
+  allowance. Raising it further would mean batching the consume's statements
+  or sharding counters, both declined for inspectability
+  ([analysis](performance/README.md)).
 - **Single instance** — correctness leans on database row locks, so a second
   api process would work but the design has not been validated for horizontal
   scale-out.

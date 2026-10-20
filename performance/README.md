@@ -46,52 +46,53 @@ fail this check regardless of its latency numbers.
 
 ## Analysis
 
-### The per-account ceiling
+### Capacity under concurrent load
+
+Consumes for different accounts take locks on different counter rows, so
+accounts do not contend with each other and aggregate throughput grows with
+the number of concurrently active accounts until a shared resource binds.
+Measured with concurrent clients spread evenly across accounts:
+
+| Concurrent clients | Accounts | Throughput | Notes                                            |
+| ------------------ | -------- | ---------- | ------------------------------------------------ |
+| 100                | 2        | 275/s      | each account sustains its full ~140/s rate       |
+| 100                | 8        | 325/s      | the api's connection pool is the limit           |
+| 100                | 8        | 396/s      | pool raised to 50 (`POOL_MAX`) — no code change  |
+| 200                | 8        | 412/s      | plateau; db at ~70% of its 2-CPU quota, api ~55% |
+
+The shared limits, in the order they bind as load grows:
+
+1. The api's Postgres connection pool — at pg's default 10 connections,
+   requests queue for a connection before reaching the account locks;
+   `POOL_MAX=50` raised throughput 22% and reduced p95 by 16% by
+   configuration alone.
+2. Host CPU — doubling the clients to 200 added 4% throughput while p95 rose
+   74%; `docker stats` sampled mid-run shows the db container hottest
+   (~70% busy), api ~55%. The limit is the host machine, not a lock or the
+   pool.
+
+Per account the ceiling is far above what stage 07 asks of it: ~8–12M
+accepted requests per month at ~7 ms per decision, roughly 100× the largest
+predefined plan (Pro: 100,000 units/month).
+
+### Per-account rate
 
 Every consume for one account takes `SELECT … FOR UPDATE` on that account's
 counter row, in a fixed account → user lock order, so consumes for one
-account serialize.
+account serialize at ~140–163 decisions/s on this host (~7 ms per decision).
 
-- Stage 03 (25 VUs, one user) yields 155/s; stage 04 (100 VUs spread over 100
-  users, only the account row shared) yields 140/s. Adding 75 VUs and 99 more
-  users did not raise throughput — the serialized section (~7 ms, i.e.
-  1 / 140/s) sets the rate. Run-to-run the ceiling lands in 140–163/s on this
-  host.
-- Little's law matches the measured latency: expected average wait ≈ VUs /
+- Stage 03 (25 clients, one user) yields 155/s; stage 04 (100 clients spread
+  over 100 users of one account, only the account row shared) yields 140/s.
+  Adding 75 clients and 99 more users did not raise throughput — the
+  serialized section sets the rate.
+- Little's law matches the measured latency: expected average wait ≈ clients /
   throughput — 25 / 155.1 = 161 ms vs 160.5 ms measured; 100 / 140.4 = 712 ms
-  vs 705.7 ms. Within ~1%, i.e. the latency is the lock queue, not CPU or
-  I/O.
-
-### The ceiling is per account, not global
-
-Stage 06 runs 100 VUs split across two accounts (different `account_usage`
-rows): 274.6/s total, each account at ~140/s — 98% of 2× the single-account
-rate. The two tenants do not contend.
-
-Stage 07 spreads 100 VUs across eight accounts and then varies the api's
-Postgres pool size (`POOL_MAX`):
-
-| Stage 07 (30 s, eight accounts) | pool 10 (default) | pool 50        | pool 50, 200 VUs |
-| ------------------------------- | ----------------- | -------------- | ---------------- |
-| throughput                      | 324.6/s           | 396.1/s        | 412.5/s          |
-| avg / p95 / p99                 | 306/436/566 ms    | 251/367/518 ms | 481/636/762 ms   |
-| per account (÷8)                | ~40.6/s           | ~49.5/s        | ~51.6/s          |
-
-Three ceilings in the order they bind:
-
-1. Per-account serialization (~140–163/s per tenant) — not reached here; each
-   account is asked for 40–52/s.
-2. The api's Postgres pool — at pg's default 10 connections, requests queue
-   for a connection before reaching the account lock. `POOL_MAX=50` raised
-   throughput 22% and reduced p95 by 16% with no code change.
-3. Host CPU — doubling the load to 200 VUs added 4% throughput while p95
-   rose 74%. `docker stats` sampled mid-run: db at ~140% of its 2-CPU quota
-   (~70% busy), api at ~109% (~55%). The limit is host CPU, not a lock or the
-   pool.
-
-At ~7 ms per accepted decision, one account sustains on the order of 8–12M
-accepted requests per month — roughly 100× the largest predefined plan
-(Pro: 100,000 units/month).
+  vs 705.7 ms. Within ~1%: the latency is the lock queue, not CPU or I/O.
+- Reads (usage, history) do not take the counter lock, so they add capacity
+  alongside saturated writes: the mixed stage reaches 191 requests/s total
+  (~134 consume/s plus ~57 read/s).
+- Under concentrated load — many clients on one user or one account —
+  requests queue, nothing fails, and accounting stays exact.
 
 ### What dominates a consume
 

@@ -1,0 +1,135 @@
+ Container fts-db Running 
+ Container fts-api Running 
+ Container fts-db Waiting 
+ Container fts-db Healthy 
+ Container fts-api Waiting 
+ Container fts-api Healthy 
+ Container fts-k6-run-ba12b28f58a4 Creating 
+ Container fts-k6-run-ba12b28f58a4 Created 
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /perf/k6/08-capacity.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 1m0s max duration (incl. graceful stop):
+              * default: 10 looping VUs for 30s (gracefulStop: 30s)
+
+
+running (0m01.0s), 10/10 VUs, 176 complete and 0 interrupted iterations
+default   [   3% ] 10 VUs  01.0s/30s
+
+running (0m02.0s), 10/10 VUs, 365 complete and 0 interrupted iterations
+default   [   7% ] 10 VUs  02.0s/30s
+
+running (0m03.0s), 10/10 VUs, 643 complete and 0 interrupted iterations
+default   [  10% ] 10 VUs  03.0s/30s
+
+running (0m04.0s), 10/10 VUs, 952 complete and 0 interrupted iterations
+default   [  13% ] 10 VUs  04.0s/30s
+
+running (0m05.0s), 10/10 VUs, 1247 complete and 0 interrupted iterations
+default   [  17% ] 10 VUs  05.0s/30s
+
+running (0m06.0s), 10/10 VUs, 1651 complete and 0 interrupted iterations
+default   [  20% ] 10 VUs  06.0s/30s
+
+running (0m07.0s), 10/10 VUs, 2132 complete and 0 interrupted iterations
+default   [  23% ] 10 VUs  07.0s/30s
+
+running (0m08.0s), 10/10 VUs, 2626 complete and 0 interrupted iterations
+default   [  27% ] 10 VUs  08.0s/30s
+
+running (0m09.0s), 10/10 VUs, 2986 complete and 0 interrupted iterations
+default   [  30% ] 10 VUs  09.0s/30s
+
+running (0m10.0s), 10/10 VUs, 3468 complete and 0 interrupted iterations
+default   [  33% ] 10 VUs  10.0s/30s
+
+running (0m11.0s), 10/10 VUs, 3812 complete and 0 interrupted iterations
+default   [  37% ] 10 VUs  11.0s/30s
+
+running (0m12.0s), 10/10 VUs, 4282 complete and 0 interrupted iterations
+default   [  40% ] 10 VUs  12.0s/30s
+
+running (0m13.0s), 10/10 VUs, 4747 complete and 0 interrupted iterations
+default   [  43% ] 10 VUs  13.0s/30s
+
+running (0m14.0s), 10/10 VUs, 5240 complete and 0 interrupted iterations
+default   [  47% ] 10 VUs  14.0s/30s
+
+running (0m15.0s), 10/10 VUs, 5725 complete and 0 interrupted iterations
+default   [  50% ] 10 VUs  15.0s/30s
+
+running (0m16.0s), 10/10 VUs, 6205 complete and 0 interrupted iterations
+default   [  53% ] 10 VUs  16.0s/30s
+
+running (0m17.0s), 10/10 VUs, 6706 complete and 0 interrupted iterations
+default   [  57% ] 10 VUs  17.0s/30s
+
+running (0m18.0s), 10/10 VUs, 7226 complete and 0 interrupted iterations
+default   [  60% ] 10 VUs  18.0s/30s
+
+running (0m19.0s), 10/10 VUs, 7622 complete and 0 interrupted iterations
+default   [  63% ] 10 VUs  19.0s/30s
+
+running (0m20.0s), 10/10 VUs, 8089 complete and 0 interrupted iterations
+default   [  67% ] 10 VUs  20.0s/30s
+
+running (0m21.0s), 10/10 VUs, 8534 complete and 0 interrupted iterations
+default   [  70% ] 10 VUs  21.0s/30s
+
+running (0m22.0s), 10/10 VUs, 8974 complete and 0 interrupted iterations
+default   [  73% ] 10 VUs  22.0s/30s
+
+running (0m23.0s), 10/10 VUs, 9323 complete and 0 interrupted iterations
+default   [  77% ] 10 VUs  23.0s/30s
+
+running (0m24.0s), 10/10 VUs, 9778 complete and 0 interrupted iterations
+default   [  80% ] 10 VUs  24.0s/30s
+
+running (0m25.0s), 10/10 VUs, 10255 complete and 0 interrupted iterations
+default   [  83% ] 10 VUs  25.0s/30s
+
+running (0m26.0s), 10/10 VUs, 10579 complete and 0 interrupted iterations
+default   [  87% ] 10 VUs  26.0s/30s
+
+running (0m27.0s), 10/10 VUs, 10961 complete and 0 interrupted iterations
+default   [  90% ] 10 VUs  27.0s/30s
+
+running (0m28.0s), 10/10 VUs, 11457 complete and 0 interrupted iterations
+default   [  93% ] 10 VUs  28.0s/30s
+
+running (0m29.0s), 10/10 VUs, 11941 complete and 0 interrupted iterations
+default   [  97% ] 10 VUs  29.0s/30s
+
+running (0m30.0s), 10/10 VUs, 12341 complete and 0 interrupted iterations
+default   [ 100% ] 10 VUs  30.0s/30s
+     ✓ status 200
+     ✓ accepted
+     ✓ charged in full
+
+   ✓ checks.........................: 100.00% ✓ 37077      ✗ 0    
+     data_received..................: 9.4 MB  313 kB/s
+     data_sent......................: 3.6 MB  122 kB/s
+     http_req_blocked...............: avg=8.23µs  min=919ns   med=3.89µs  p(90)=6.79µs   p(95)=7.98µs   p(99)=39.84µs  max=5.57ms  
+     http_req_connecting............: avg=590ns   min=0s      med=0s      p(90)=0s       p(95)=0s       p(99)=0s       max=1.12ms  
+     http_req_duration..............: avg=23.96ms min=8.01ms  med=21.17ms p(90)=35ms     p(95)=41.42ms  p(99)=63.29ms  max=257ms   
+       { expected_response:true }...: avg=23.96ms min=8.01ms  med=21.17ms p(90)=35ms     p(95)=41.42ms  p(99)=63.29ms  max=257ms   
+   ✓ http_req_failed................: 0.00%   ✓ 0          ✗ 12359
+     http_req_receiving.............: avg=103.5µs min=10.44µs med=77.81µs p(90)=149.96µs p(95)=221.06µs p(99)=646.27µs max=5.18ms  
+     http_req_sending...............: avg=37.6µs  min=3.9µs   med=17.58µs p(90)=42.78µs  p(95)=64.37µs  p(99)=337.57µs max=7.36ms  
+     http_req_tls_handshaking.......: avg=0s      min=0s      med=0s      p(90)=0s       p(95)=0s       p(99)=0s       max=0s      
+     http_req_waiting...............: avg=23.82ms min=7.92ms  med=21.05ms p(90)=34.82ms  p(95)=41.19ms  p(99)=63.02ms  max=253.85ms
+     http_reqs......................: 12359   411.638163/s
+     iteration_duration.............: avg=24.25ms min=8.21ms  med=21.42ms p(90)=35.36ms  p(95)=41.85ms  p(99)=63.58ms  max=265.04ms
+     iterations.....................: 12359   411.638163/s
+     vus............................: 10      min=10       max=10 
+     vus_max........................: 10      min=10       max=10 
+running (0m30.0s), 00/10 VUs, 12359 complete and 0 interrupted iterations
+default ✓ [ 100% ] 10 VUs  30s

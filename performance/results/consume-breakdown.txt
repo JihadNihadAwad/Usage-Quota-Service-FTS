@@ -1,27 +1,36 @@
 # What dominates a consume: per-statement round trips, not database work
 
-Measured 2026-10-19, inside the compose network (api container -> db
-container), 500 queries each on one pooled connection:
+Measured 2026-10-20, inside the compose network (api container -> db
+container), 500 queries each on one pooled connection, after the
+request-count counters landed:
 
 ```
-$ docker compose exec api node -e "... 500x select 1 / small row ..."
-round-trip select 1:   0.278 ms
-round-trip small row:  0.185 ms
+$ docker compose exec api node -e "... 500x select 1 / counter row ..."
+round-trip select 1:      0.303 ms
+round-trip counter row:   0.352 ms
 ```
 
-An accepted consume for the loadtest plans executes 12 statements
+An accepted consume for the loadtest plans now executes 10 statements
 (fast-path idempotency check, user+plan load, account+plan load, two lazy
-counter-row inserts, two locked reads, the in-transaction idempotency
-re-check, the monthly-request-cap count, two UPDATE ... RETURNING, and the
-ledger insert). At ~0.2 ms per round trip that is ~2.5 ms of pure
-api<->db latency before any database work at all - and the EXPLAIN captures
-(explain-queries.txt) show the database's own execution time for these
-statements is 0.01-0.9 ms each, ~2 ms in total.
+counter-row inserts, two locked reads that also return the request counts,
+the in-transaction idempotency re-check, two UPDATE ... RETURNING, and the
+ledger insert). Until 2026-10-20 it was 12: the two monthly_request_cap
+COUNT(*) queries ran inside the serialized transaction - the account-level
+scan measured 18.6 ms at 124,646 accepted rows in the month (captures in
+explain-request-count-before.txt), which would have collapsed the
+per-account rate for cap-configured tenants as the month filled up. The
+counts now live on the counter rows and cost nothing extra to read.
 
-The serialized section of a consume measured ~6.1 ms (stage 03/04 ceiling of
-~163/s). So roughly: ~2.5 ms round trips + ~2 ms statement execution/driver
+At ~0.3 ms per round trip that is ~3 ms of pure api<->db latency before
+any database work at all - and the EXPLAIN captures (explain-queries.txt)
+show the database's own execution time for these statements is
+0.01-0.9 ms each, ~2 ms in total.
+
+The serialized section of a consume measured ~6.1 ms (stage 03/04 ceiling
+of ~163/s). So roughly: ~3 ms round trips + ~2 ms statement execution/driver
 overhead + lock handoff. The path is round-trip bound, not CPU or I/O
 bound - which is also why adding VUs cannot raise the ceiling (stage 04).
+
 
 What could be done about it, and why it was not done:
 

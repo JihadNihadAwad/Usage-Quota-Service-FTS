@@ -9,10 +9,10 @@ history queries.
 docker compose up --build
 ```
 
-The stack has three services: PostgreSQL, the API (port 3000), and a demo
-web client (port 3001). On startup the API applies its schema migrations and
-seeds the predefined plans. The demo client exercises the API with the same
-requests documented in the HTTP API section.
+The compose file starts three services: PostgreSQL, the API (port 3000),
+and a demo web client (port 3001). On startup the API applies its schema
+migrations and seeds the predefined plans. The demo client exercises the API
+with the same requests documented in the HTTP API section.
 
 ## Contents
 
@@ -20,6 +20,7 @@ requests documented in the HTTP API section.
 - [Quickstart](#quickstart)
 - [Performance](#performance) — measured throughput, latency, and limits
 - [Authentication](#authentication)
+- [Configuration](#configuration) — environment variables and resource limits
 - [HTTP API](#http-api) — bootstrap, consume, quota rejections, replays, usage, history
 - [Plans](#plans) — the predefined table, custom plans, rule semantics
 - [Design notes](#design-notes)
@@ -60,25 +61,54 @@ captures and analysis in [performance/README.md](performance/README.md)):
 
 | Load                                            | Measured result                                                                                                  |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| 2 concurrent clients, mixed traffic             | 211 requests/s, p95 16 ms, p99 23 ms                                                                             |
-| 100 concurrent clients, one account (100 users) | 140 decisions/s — the per-account rate: consumes for one account serialize on its counter row (~7 ms each)       |
-| 100 concurrent clients, two accounts            | 275 decisions/s — accounts are independent; each sustains its full rate (~140/s)                                 |
-| 100 concurrent clients, eight accounts          | 325 decisions/s at the default pool of 10 db connections; 396/s with `POOL_MAX=50`; 412/s plateau at 200 clients |
-| Reads (usage, history)                          | no counter lock: in the mixed stage they add ~57 requests/s on top of ~134 consume/s                             |
+| 2 concurrent clients, mixed traffic             | 231 requests/s, p95 15 ms, p99 19 ms                                                                       |
+| 100 concurrent clients, one account (100 users) | 167 decisions/s — the per-account rate: consumes for one account serialize on its counter row (~6 ms each) |
+| 100 concurrent clients, two accounts            | 280 decisions/s — accounts are independent; each sustains its full rate                                   |
+| 100 concurrent clients, eight accounts          | 417 decisions/s aggregate; 400 clients add nothing — host CPU is the limit on this machine                 |
+| Reads (usage, history)                          | no counter lock: in the mixed stage they add ~59 requests/s on top of ~141 consume/s                        |
 
 Reading the numbers: aggregate capacity grows with the number of active
 accounts, because each account has its own counter row and its own lock. The
 limits, in the order they bind, are the per-account serialization
-(~140–163 decisions/s per account), the api's Postgres connection pool
-(`POOL_MAX`; +22% from configuration alone), and host CPU (the 412/s plateau,
-with the db container ~70% busy). Concentrated load — many clients on one
-user or one account — does not fail: requests queue, every decision is
-recorded, and accounting stays exact.
+(~165 decisions/s per account), the api's Postgres connection pool
+(`POOL_MAX`; 10 is pg's default), and host CPU (the ~360–420/s ceiling on
+this machine, with both containers near their CPU quotas). Concentrated
+load — many clients on one user or one account — does not fail: requests
+queue, every decision is recorded, and accounting stays exact.
 
 After every benchmark stage a SQL check recomputes the accounting per
-account (`account counter == Σ user counters == Σ accepted ledger units`);
-all stages passed it. Thresholds, per-stage tables, and reproduction
+account (`account counter == Σ user counters == Σ accepted ledger units`;
+the maintained request counters are checked against the ledger too); all
+stages passed it. Thresholds, per-stage tables, and reproduction
 commands: [performance/README.md](performance/README.md).
+
+## Configuration
+
+Everything runs with defaults; these are the knobs that exist. Inside
+Docker, set them on the service (`docker compose up -d api` picks them up
+from the environment); on a host install, put them in `.env` (see
+`.env.example`).
+
+| Variable          | Default                                        | Meaning                                                                                          |
+| ----------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`    | `postgres://postgres:postgres@db:5432/fts`     | Postgres connection string (host install: point it at your database)                              |
+| `PORT`            | `3000`                                         | API listen port                                                                                   |
+| `LOG_LEVEL`       | `info`                                         | `debug` adds per-request logs                                                                    |
+| `POOL_MAX`        | `10` (pg's default)                            | Postgres connections per api process. The first shared limit under multi-account load; see the performance section |
+| `CLIENT_PORT`     | `3001`                                         | Demo client port                                                                                  |
+| `USAGE_API_URL`   | `http://localhost:3000/v1`                     | Where the demo client finds the API                                                              |
+
+The compose file also pins resource limits (api and db at 2 CPUs each) and
+uses healthchecks to order startup — the values to change when tuning
+throughput on stronger hardware are `POOL_MAX` (until host CPU binds) and
+those CPU limits.
+
+Plan values themselves are data, not configuration: the predefined plans
+are seeded rows (fixed ids), and tenants create their own plans through the
+API. Changing a predefined plan's limits means editing
+`src/db/predefined.ts` and restarting — the seed upserts by id, so the
+change applies to every fresh database (existing assignment keeps working
+since plans are referenced by id).
 
 ## Authentication
 
@@ -445,10 +475,10 @@ and the reasoning:
 
 ## Known limitations
 
-- **Per-account throughput ceiling** — ~140–163 decisions/s for a single
+- **Per-account throughput ceiling** — ~165 decisions/s for a single
   account (its consumes serialize on its counter row). Aggregate capacity
   grows with the number of active accounts until the connection pool or host
-  CPU binds; measured headroom is ~100× the largest predefined plan's monthly
+  CPU binds; measured headroom is ~140× the largest predefined plan's monthly
   allowance. Raising it further would mean batching the consume's statements
   or sharding counters, both declined for inspectability
   ([analysis](performance/README.md)).

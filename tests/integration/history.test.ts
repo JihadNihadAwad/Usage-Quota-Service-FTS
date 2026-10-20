@@ -165,6 +165,47 @@ describe('history pagination (keyset)', () => {
     expect(res.body.error.code).toBe('INVALID_CURSOR');
   });
 
+  it('does not skip rows that share a millisecond with the cursor row', async () => {
+    // Postgres timestamps carry microseconds; the cursor must too. Three
+    // ledger rows inside the same millisecond, at distinct microsecond
+    // offsets, with a page break after the middle row: the row with the
+    // smallest offset must still be reachable through the cursor.
+    const { key } = await bootstrapAccount(agent, 'DocuFlow');
+    const alice = await createUser(agent, key, 'alice');
+    const month = new Date().toISOString().slice(0, 7);
+
+    const rules = JSON.stringify({ monthly_allowance: 1000, max_per_request: 20 });
+    const accountId = (await getJson('/v1/account', key)).id as string;
+    const base = `date_trunc('second', now() - interval '1 hour')`;
+    for (const [requestId, micros] of [
+      ['us-1', 123],
+      ['us-2', 456],
+      ['us-3', 789],
+    ] as const) {
+      await pool.query(
+        `insert into requests
+           (account_id, user_id, request_id, units, month_start, accepted, units_consumed,
+            account_plan_id, user_plan_id, account_rules, user_rules, response, created_at)
+         values ($1, $2, $3, 1, $4::date, true, 1,
+                '11111111-1111-4111-8111-111111111111',
+                '33333333-3333-4333-8333-333333333333',
+                $5::jsonb, $5::jsonb,
+                jsonb_build_object('request_id', $3::text, 'accepted', true),
+                ${base} + ($6 || ' microseconds')::interval)`,
+        [accountId, alice.id, requestId, `${month}-01`, rules, micros],
+      );
+    }
+
+    const page1 = await getJson('/v1/history?limit=2', key);
+    expect(page1.items.map((item: { request_id: string }) => item.request_id)).toEqual([
+      'us-3',
+      'us-2',
+    ]);
+    const page2 = await getJson(`/v1/history?limit=2&cursor=${page1.next_cursor}`, key);
+    expect(page2.items.map((item: { request_id: string }) => item.request_id)).toEqual(['us-1']);
+    expect(page2.next_cursor).toBeNull();
+  });
+
   it('clamps limit to 1..100 via validation (0 -> 400)', async () => {
     const { key } = await bootstrapAccount(agent, 'DocuFlow');
     const res = await agent.get('/v1/history?limit=0').set('Authorization', `Bearer ${key}`);

@@ -66,7 +66,23 @@ export async function listHistory(
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: requests.id,
+      requestId: requests.requestId,
+      userId: requests.userId,
+      units: requests.units,
+      accepted: requests.accepted,
+      unitsConsumed: requests.unitsConsumed,
+      rejectionLevel: requests.rejectionLevel,
+      rejectionRule: requests.rejectionRule,
+      monthStart: requests.monthStart,
+      createdAt: requests.createdAt,
+      // The cursor's timestamp must carry Postgres' microsecond precision -
+      // a JS Date truncates to milliseconds, and rows sharing the cursor
+      // row's millisecond would fall outside the keyset predicate and get
+      // skipped. Keep the original Date for display; this string for paging.
+      createdAtKey: sql<string>`to_char(${requests.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+    })
     .from(requests)
     .where(and(...conditions))
     // DESC NULLS LAST is not decoration: the recent-history indexes are
@@ -99,7 +115,7 @@ export async function listHistory(
     })),
     nextCursor:
       hasMore && last !== undefined
-        ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id })
+        ? encodeCursor({ createdAt: last.createdAtKey, id: last.id })
         : null,
   };
 }

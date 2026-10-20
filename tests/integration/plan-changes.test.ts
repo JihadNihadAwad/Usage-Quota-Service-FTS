@@ -12,15 +12,12 @@ import {
 } from './helpers.js';
 import { PRO_PLAN_ID } from '../../src/db/predefined.js';
 
-// Plan changes:
-// - Plan changes apply to new requests after the update succeeds.
-// - Switching plans preserves units already consumed; it does not grant a
-//    fresh monthly allowance.
-// - If a monthly allowance is reduced below existing usage, show zero
-//    remaining allowance and reject further consumption at that level.
-// - Changes must preserve past request history.
-// Plus: editing a custom plan affects assigned users on their next request,
-// and per-request rule snapshots keep old history explainable.
+// Plan changes: they apply to new requests, consumed units are preserved
+// (no fresh allowance), an allowance reduced below current usage leaves
+// remaining at zero and rejects further consumption, and past request
+// history is untouched. Editing a custom plan affects assigned users on
+// their next request; per-request rule snapshots keep old history
+// explainable.
 
 const pool: Pool = createTestPool();
 const agent: Agent = api(pool);

@@ -32,6 +32,8 @@
     "bench:mixed": "docker compose --profile perf run --rm k6 run /perf/k6/05-mixed.js",
     "bench:multi-account": "docker compose --profile perf run --rm k6 run /perf/k6/06-multi-account.js",
     "bench:scaling": "docker compose --profile perf run --rm k6 run /perf/k6/07-account-scaling.js",
+    "bench:capacity": "docker compose --profile perf run --rm k6 run /perf/k6/08-capacity.js",
+    "bench:saturation": "docker compose --profile perf run --rm k6 run /perf/k6/09-saturation.js",
     "bench:invariants": "tsx performance/check-invariants.ts"
   },
   "dependencies": {

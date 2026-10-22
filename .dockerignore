@@ -10,6 +10,7 @@ temp
 .env.*
 *.md
 performance
+!performance/check-invariants.ts
 tests
 .dockerignore
 docker-compose.yml

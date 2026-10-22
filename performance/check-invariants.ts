@@ -2,8 +2,9 @@
 //
 //   npm run bench:invariants
 //
-// Talks straight to the compose db (localhost:5432) and asserts, for EVERY
-// loadtest account and the current UTC month:
+// Runs inside the api container (node type-strips .ts natively) and talks
+// to the compose db over its network - no host-published db port needed.
+// It asserts, for EVERY loadtest account and the current UTC month:
 //   1. account counter == sum of user counters == sum of accepted ledger units
 //   2. every rejected ledger row consumed nothing
 //   3. no counter ever exceeded its plan allowance
@@ -12,25 +13,14 @@
 // A mismatch means the stage corrupted accounting and fails the run,
 // regardless of latency results.
 
-import { readFileSync } from 'node:fs';
 import type { PoolClient } from 'pg';
 import { Pool } from 'pg';
-import { fileURLToPath } from 'node:url';
 
-const STATE_FILE = fileURLToPath(new URL('./loadtest-state.json', import.meta.url));
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/fts';
 
 interface AccountRef {
   id: string;
   name: string;
-}
-
-interface State {
-  accounts?: AccountRef[];
-  // State files written before the scaling stage kept two accounts at the
-  // top level instead of an array.
-  account?: AccountRef;
-  account2?: AccountRef;
 }
 
 const month = `${new Date().toISOString().slice(0, 7)}-01`;
@@ -154,15 +144,6 @@ async function checkAccount(client: PoolClient, name: string, accountId: string)
 }
 
 async function main(): Promise<void> {
-  const state = JSON.parse(readFileSync(STATE_FILE, 'utf8')) as State;
-  const accounts: AccountRef[] = Array.isArray(state.accounts)
-    ? state.accounts
-    : [state.account, state.account2].filter((a): a is AccountRef => a !== undefined);
-  if (accounts.length === 0) {
-    console.error('[invariants] no loadtest accounts in the state file - run npm run bench:seed');
-    process.exitCode = 1;
-    return;
-  }
   let allPassed = true;
   // One REPEATABLE READ transaction = one snapshot for every check. The
   // checker runs right after a stage, while its last requests may still be
@@ -172,7 +153,18 @@ async function main(): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query('begin isolation level repeatable read');
-    for (const account of accounts) {
+    // The account list comes from the database itself (the seed's fixed
+    // names) - the state file holds live API keys and stays out of this
+    // path entirely.
+    const accounts = await client.query(
+      `select id, name from accounts where name like 'Loadtest Co%' order by name`,
+    );
+    if (accounts.rowCount === 0) {
+      console.error('[invariants] no loadtest accounts in the database - run npm run bench:seed');
+      process.exitCode = 1;
+      return;
+    }
+    for (const account of accounts.rows as AccountRef[]) {
       allPassed = (await checkAccount(client, account.name, account.id)) && allPassed;
     }
     await client.query('commit');

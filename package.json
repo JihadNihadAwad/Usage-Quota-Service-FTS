@@ -34,7 +34,7 @@
     "bench:scaling": "docker compose --profile perf run --rm k6 run /perf/k6/07-account-scaling.js",
     "bench:capacity": "docker compose --profile perf run --rm k6 run /perf/k6/08-capacity.js",
     "bench:saturation": "docker compose --profile perf run --rm k6 run /perf/k6/09-saturation.js",
-    "bench:invariants": "tsx performance/check-invariants.ts"
+    "bench:invariants": "docker compose exec -T api node tools/check-invariants.ts"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",

@@ -8,8 +8,8 @@
  Container fts-db Healthy 
  Container fts-api Waiting 
  Container fts-api Healthy 
- Container fts-k6-run-e77618eabca2 Creating 
- Container fts-k6-run-e77618eabca2 Created 
+ Container fts-k6-run-222da5feac09 Creating 
+ Container fts-k6-run-222da5feac09 Created 
 
          /\      Grafana   /‾‾/  
     /\  /  \     |\  __   /  /   
@@ -36,19 +36,19 @@
      ✓ history newest-first with the replay adding no row
 
    ✓ checks.........................: 100.00% ✓ 10        ✗ 0
-     data_received..................: 4.9 kB  73 kB/s
-     data_sent......................: 1.5 kB  23 kB/s
-     http_req_blocked...............: avg=124.58µs min=3.62µs  med=5.71µs   p(90)=363.69µs p(95)=541.43µs p(99)=683.61µs max=719.16µs
-     http_req_connecting............: avg=33.15µs  min=0s      med=0s       p(90)=99.46µs  p(95)=149.19µs p(99)=188.98µs max=198.92µs
-     http_req_duration..............: avg=10.57ms  min=3.11ms  med=9.68ms   p(90)=18.9ms   p(95)=20.45ms  p(99)=21.69ms  max=21.99ms 
-       { expected_response:true }...: avg=10.57ms  min=3.11ms  med=9.68ms   p(90)=18.9ms   p(95)=20.45ms  p(99)=21.69ms  max=21.99ms 
+     data_received..................: 4.9 kB  29 kB/s
+     data_sent......................: 1.5 kB  8.9 kB/s
+     http_req_blocked...............: avg=174.79µs min=3.02µs   med=4.73µs   p(90)=516.59µs p(95)=770.7µs  p(99)=973.98µs max=1.02ms  
+     http_req_connecting............: avg=54.27µs  min=0s       med=0s       p(90)=162.81µs p(95)=244.22µs p(99)=309.34µs max=325.63µs
+     http_req_duration..............: avg=27.68ms  min=5.94ms   med=13.02ms  p(90)=63.95ms  p(95)=83.42ms  p(99)=99ms     max=102.89ms
+       { expected_response:true }...: avg=27.68ms  min=5.94ms   med=13.02ms  p(90)=63.95ms  p(95)=83.42ms  p(99)=99ms     max=102.89ms
    ✓ http_req_failed................: 0.00%   ✓ 0         ✗ 6
-     http_req_receiving.............: avg=99.98µs  min=79.04µs med=102.72µs p(90)=115.89µs p(95)=117.68µs p(99)=119.12µs max=119.47µs
-     http_req_sending...............: avg=40.96µs  min=10.27µs med=23.93µs  p(90)=86.53µs  p(95)=94µs     p(99)=99.98µs  max=101.48µs
-     http_req_tls_handshaking.......: avg=0s       min=0s      med=0s       p(90)=0s       p(95)=0s       p(99)=0s       max=0s      
-     http_req_waiting...............: avg=10.43ms  min=3.01ms  med=9.54ms   p(90)=18.72ms  p(95)=20.25ms  p(99)=21.47ms  max=21.77ms 
-     http_reqs......................: 6       88.917162/s
-     iteration_duration.............: avg=67.09ms  min=67.09ms med=67.09ms  p(90)=67.09ms  p(95)=67.09ms  p(99)=67.09ms  max=67.09ms 
-     iterations.....................: 1       14.819527/s
-running (00m00.1s), 0/1 VUs, 1 complete and 0 interrupted iterations
-default ✓ [ 100% ] 1 VUs  00m00.1s/10m0s  1/1 shared iters
+     http_req_receiving.............: avg=117.21µs min=91.72µs  med=111.33µs p(90)=143.52µs p(95)=144.85µs p(99)=145.91µs max=146.18µs
+     http_req_sending...............: avg=69.25µs  min=11.47µs  med=32.18µs  p(90)=154.19µs p(95)=155.19µs p(99)=156µs    max=156.2µs 
+     http_req_tls_handshaking.......: avg=0s       min=0s       med=0s       p(90)=0s       p(95)=0s       p(99)=0s       max=0s      
+     http_req_waiting...............: avg=27.5ms   min=5.81ms   med=12.8ms   p(90)=63.73ms  p(95)=83.16ms  p(99)=98.71ms  max=102.59ms
+     http_reqs......................: 6       35.144276/s
+     iteration_duration.............: avg=170.58ms min=170.58ms med=170.58ms p(90)=170.58ms p(95)=170.58ms p(99)=170.58ms max=170.58ms
+     iterations.....................: 1       5.857379/s
+running (00m00.2s), 0/1 VUs, 1 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  00m00.2s/10m0s  1/1 shared iters

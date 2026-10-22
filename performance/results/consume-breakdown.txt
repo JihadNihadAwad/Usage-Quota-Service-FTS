@@ -1,37 +1,39 @@
 # What a consume costs, and where the time goes
 
-Measured 2026-10-20 with four probes (tools committed next to this file):
+Measured 2026-10-22 with four probes (tools committed next to this file):
 the same consume-shaped transaction, run four ways. 300 iterations each,
 single client, sequential (mimicking the per-account lock regime).
+Steady-state shape: 8 statements (the month's counter rows already exist;
+only a month's first consume pays the two setup INSERTs).
 
 | Probe | Path                                        | Per transaction |
 | ----- | ------------------------------------------- | -------------- |
-| A     | api -> db over the compose bridge, 10 statements, one round trip each (how `src/services/consume.ts` runs) | 6.83 ms |
-| B     | api -> db, same 10 statements in ONE multi-statement query (one round trip)                  | 3.74 ms |
-| D     | db-internal unix socket (no network), statements one at a time (pgbench)                       | 4.45 ms |
-| E     | db-internal unix socket, `synchronous_commit = off` (no WAL fsync at commit)                  | 2.47 ms |
+| A     | api -> db over the compose bridge, 8 statements, one round trip each (how `src/services/consume.ts` runs) | 6.18 ms |
+| B     | api -> db, same 8 statements in ONE multi-statement query (one round trip)                  | 3.50 ms |
+| D     | db-internal unix socket (no network), statements one at a time (pgbench)                       | 4.04 ms |
+| E     | db-internal unix socket, `synchronous_commit = off` (no WAL fsync at commit)                  | 2.37 ms |
 
-So the ~7 ms serialized section of a consume is:
+So the ~5.7–6.2 ms serialized section of a consume is:
 
-- **~3.1 ms round trips (45%)** - ten network round trips over the compose
+- **~2.7 ms round trips (43%)** - eight network round trips over the compose
   bridge at ~0.3 ms each (A - B). This is the cost of the one-statement-
   at-a-time style; it is docker-bridge latency, not the database's work.
-- **~2.0 ms commit durability** - the WAL fsync every commit pays (D - E).
+- **~1.7 ms commit durability** - the WAL fsync every commit pays (D - E).
   Required: "data survives a restart" is a hard requirement of the service,
   and every accepted charge is durable the moment the response is sent.
-- **~1.5 ms statement execution** - the actual database work, index-served
+- **~1.6 ms statement execution** - the actual database work, index-served
   throughout (see explain-consume-path.txt for the statement-by-statement
   EXPLAIN: every statement is 0.08-0.55 ms; the ledger insert, the most
-  expensive at ~0.85 ms warm, maintains eight indexes and fires four FK
-  checks).
+  expensive, measured 0.36-0.41 ms warm and maintains six indexes plus four
+  FK checks - after migration 0002 dropped the two indexes nothing read).
 
-What batching would buy, measured rather than estimated: fusing the ten
+What batching would buy, measured rather than estimated: fusing the eight
 statements into one round trip (a PL/pgSQL block or CTE chain) lowers the
-serialized section from 6.83 ms to 3.74 ms - a per-account ceiling of
-~267 decisions/s instead of ~146. An earlier version of this file
-estimated "500-1000/s"; the measurement says ~267/s. Not done: the
+serialized section from 6.18 ms to 3.50 ms - a per-account ceiling of
+~286 decisions/s instead of ~162. (The 2026-10-20 version of this file
+measured the then-10-statement path at 6.83/3.74 ms.) Not done: the
 statement sequence is the inspectable form of the locking protocol, and
-~165/s per account is ~140x the largest predefined plan's sustainable
+~174/s per account is ~150x the largest predefined plan's sustainable
 rate.
 
 ## Reproduce
@@ -49,4 +51,5 @@ docker compose exec db pgbench -U postgres -c 1 -t 300 -f /tmp/probe-db-nosync.s
 
 The probes charge and then reverse their writes (probe-cost.cjs cleans up
 after itself; after a pgbench run re-derive the touched counters from the
-ledger, which check-invariants.ts verifies afterwards).
+ledger - both used_units and accepted_requests - which check-invariants.ts
+verifies afterwards).

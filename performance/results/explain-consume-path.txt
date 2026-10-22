@@ -1,200 +1,184 @@
-﻿=== EXPLAIN ANALYZE of every statement in the consume path ===
-Captured 2026-10-20 on the loadtest database (account 1: 138k+ ledger rows, 100 users).
-Mutating statements run inside a transaction that rolls back.
+=== EXPLAIN ANALYZE of every statement in the consume path (steady state) ===
+Captured 2026-10-22 on the loadtest database (account 1: 380k+ ledger rows, 100 users),
+after migration 0002 dropped the two unused partial indexes. Mutating statements
+run inside a transaction that rolls back. Warm-cache numbers: first-touch runs
+after idle show extra shared reads; run each twice and read the second.
 
 === 1. fast-path idempotency lookup (before the tx, every consume) ===
                                                                QUERY PLAN                                                                
 -----------------------------------------------------------------------------------------------------------------------------------------
- Index Scan using requests_account_request_key on requests  (cost=0.42..8.44 rows=1 width=663) (actual time=0.034..0.039 rows=0 loops=1)
+ Index Scan using requests_account_request_key on requests  (cost=0.42..8.44 rows=1 width=663) (actual time=0.070..0.075 rows=0 loops=1)
    Index Cond: ((account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid) AND (request_id = 'smoke-nonexistent'::text))
-   Buffers: shared hit=3
+   Buffers: shared hit=2 read=1
  Planning:
-   Buffers: shared hit=217
- Planning Time: 2.304 ms
- Execution Time: 0.123 ms
+   Buffers: shared hit=173 read=11
+ Planning Time: 5.157 ms
+ Execution Time: 0.144 ms
 (7 rows)
 
 
 === 2. user + plan load (in tx) ===
                                                         QUERY PLAN                                                         
 ---------------------------------------------------------------------------------------------------------------------------
- Nested Loop  (cost=0.42..16.49 rows=1 width=80) (actual time=0.046..0.051 rows=1 loops=1)
-   Buffers: shared hit=5
-   ->  Index Scan using users_pkey on users u  (cost=0.28..8.29 rows=1 width=16) (actual time=0.029..0.029 rows=1 loops=1)
+ Nested Loop  (cost=0.42..16.49 rows=1 width=80) (actual time=1.051..1.057 rows=1 loops=1)
+   Buffers: shared hit=3 read=2
+   ->  Index Scan using users_pkey on users u  (cost=0.28..8.29 rows=1 width=16) (actual time=0.665..0.666 rows=1 loops=1)
          Index Cond: (id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8'::uuid)
          Filter: (account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid)
-         Buffers: shared hit=3
-   ->  Index Scan using plans_pkey on plans p  (cost=0.15..8.17 rows=1 width=80) (actual time=0.015..0.015 rows=1 loops=1)
+         Buffers: shared hit=2 read=1
+   ->  Index Scan using plans_pkey on plans p  (cost=0.15..8.17 rows=1 width=80) (actual time=0.383..0.383 rows=1 loops=1)
          Index Cond: (id = u.plan_id)
-         Buffers: shared hit=2
+         Buffers: shared hit=1 read=1
  Planning:
-   Buffers: shared hit=247
- Planning Time: 1.683 ms
- Execution Time: 0.099 ms
+   Buffers: shared hit=244 read=3
+ Planning Time: 3.788 ms
+ Execution Time: 1.111 ms
 (13 rows)
 
 
 === 3. account + plan load (in tx) ===
                                                         QUERY PLAN                                                         
 ---------------------------------------------------------------------------------------------------------------------------
- Nested Loop  (cost=0.15..9.94 rows=1 width=80) (actual time=0.039..0.044 rows=1 loops=1)
-   Buffers: shared hit=3
-   ->  Seq Scan on accounts a  (cost=0.00..1.74 rows=1 width=16) (actual time=0.018..0.019 rows=1 loops=1)
+ Nested Loop  (cost=0.15..9.94 rows=1 width=80) (actual time=0.030..0.036 rows=1 loops=1)
+   Buffers: shared hit=2 read=1
+   ->  Seq Scan on accounts a  (cost=0.00..1.74 rows=1 width=16) (actual time=0.016..0.017 rows=1 loops=1)
          Filter: (id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid)
-         Rows Removed by Filter: 62
-         Buffers: shared hit=1
-   ->  Index Scan using plans_pkey on plans p  (cost=0.15..8.17 rows=1 width=80) (actual time=0.018..0.018 rows=1 loops=1)
+         Rows Removed by Filter: 66
+         Buffers: shared read=1
+   ->  Index Scan using plans_pkey on plans p  (cost=0.15..8.17 rows=1 width=80) (actual time=0.012..0.012 rows=1 loops=1)
          Index Cond: (id = a.account_plan_id)
          Buffers: shared hit=2
  Planning:
-   Buffers: shared hit=218
- Planning Time: 1.712 ms
- Execution Time: 0.090 ms
+   Buffers: shared hit=216 read=2
+ Planning Time: 1.960 ms
+ Execution Time: 0.076 ms
 (13 rows)
 
 
-=== 4/5. lazy counter-row upserts (in tx) ===
-BEGIN
-                                             QUERY PLAN                                              
------------------------------------------------------------------------------------------------------
- Insert on account_usage  (cost=0.00..0.01 rows=0 width=0) (actual time=0.376..0.381 rows=0 loops=1)
-   Conflict Resolution: NOTHING
-   Tuples Inserted: 0
-   Conflicting Tuples: 1
-   Buffers: shared hit=58
-   ->  Result  (cost=0.00..0.01 rows=1 width=44) (actual time=0.002..0.002 rows=1 loops=1)
- Planning:
-   Buffers: shared hit=6
- Planning Time: 0.094 ms
- Execution Time: 0.406 ms
-(10 rows)
-
-ROLLBACK
-BEGIN
-                                            QUERY PLAN                                            
---------------------------------------------------------------------------------------------------
- Insert on user_usage  (cost=0.00..0.01 rows=0 width=0) (actual time=0.523..0.528 rows=0 loops=1)
-   Conflict Resolution: NOTHING
-   Tuples Inserted: 0
-   Conflicting Tuples: 1
-   Buffers: shared hit=59
-   ->  Result  (cost=0.00..0.01 rows=1 width=44) (actual time=0.001..0.002 rows=1 loops=1)
- Planning:
-   Buffers: shared hit=6
- Planning Time: 0.106 ms
- Execution Time: 0.544 ms
-(10 rows)
-
-ROLLBACK
-
-=== 6/7. locked counter reads (in tx) ===
+=== 4/5. locked counter reads (in tx) - the row is created under the lock only on a month's first consume ===
 BEGIN
                                                                           QUERY PLAN                                                                          
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
- LockRows  (cost=0.14..8.17 rows=1 width=22) (actual time=0.054..0.072 rows=1 loops=1)
-   Buffers: shared hit=3
-   ->  Index Scan using account_usage_account_id_month_start_pk on account_usage  (cost=0.14..8.16 rows=1 width=22) (actual time=0.024..0.025 rows=1 loops=1)
+ LockRows  (cost=0.14..8.17 rows=1 width=22) (actual time=0.113..0.119 rows=1 loops=1)
+   Buffers: shared hit=4 dirtied=1
+   ->  Index Scan using account_usage_account_id_month_start_pk on account_usage  (cost=0.14..8.16 rows=1 width=22) (actual time=0.068..0.069 rows=1 loops=1)
          Index Cond: ((account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid) AND (month_start = '2026-10-01'::date))
          Buffers: shared hit=2
  Planning:
-   Buffers: shared hit=87
- Planning Time: 0.624 ms
- Execution Time: 0.126 ms
+   Buffers: shared hit=87 dirtied=4
+ Planning Time: 0.801 ms
+ Execution Time: 0.205 ms
 (9 rows)
 
 ROLLBACK
 BEGIN
                                                                      QUERY PLAN                                                                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------
- LockRows  (cost=0.27..8.30 rows=1 width=22) (actual time=0.097..0.104 rows=1 loops=1)
-   Buffers: shared hit=4
-   ->  Index Scan using user_usage_user_id_month_start_pk on user_usage  (cost=0.27..8.29 rows=1 width=22) (actual time=0.078..0.079 rows=1 loops=1)
+ LockRows  (cost=0.27..8.30 rows=1 width=22) (actual time=1.035..1.043 rows=1 loops=1)
+   Buffers: shared hit=4 read=1 dirtied=1
+   ->  Index Scan using user_usage_user_id_month_start_pk on user_usage  (cost=0.27..8.29 rows=1 width=22) (actual time=0.989..0.990 rows=1 loops=1)
          Index Cond: ((user_id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8'::uuid) AND (month_start = '2026-10-01'::date))
-         Buffers: shared hit=3
+         Buffers: shared hit=2 read=1
  Planning:
-   Buffers: shared hit=87
- Planning Time: 0.958 ms
- Execution Time: 0.199 ms
+   Buffers: shared hit=87 dirtied=2
+ Planning Time: 0.503 ms
+ Execution Time: 1.094 ms
 (9 rows)
 
 ROLLBACK
 
-=== 8. idempotency re-check under the locks (in tx) ===
+=== 6. idempotency re-check under the locks (in tx) ===
                                                                QUERY PLAN                                                               
 ----------------------------------------------------------------------------------------------------------------------------------------
- Index Scan using requests_account_request_key on requests  (cost=0.42..8.44 rows=1 width=24) (actual time=0.027..0.031 rows=0 loops=1)
+ Index Scan using requests_account_request_key on requests  (cost=0.42..8.44 rows=1 width=24) (actual time=0.030..0.034 rows=0 loops=1)
    Index Cond: ((account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid) AND (request_id = 'smoke-nonexistent'::text))
    Buffers: shared hit=3
  Planning:
-   Buffers: shared hit=212
- Planning Time: 1.255 ms
- Execution Time: 0.075 ms
+   Buffers: shared hit=177
+ Planning Time: 1.253 ms
+ Execution Time: 0.086 ms
 (7 rows)
 
 
-=== 9/10. charge updates with RETURNING (in tx, rolled back) ===
+=== 7/8. charge updates with RETURNING (in tx, rolled back) ===
 BEGIN
                                                                           QUERY PLAN                                                                          
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
- Update on account_usage  (cost=0.14..8.17 rows=1 width=30) (actual time=0.168..0.173 rows=1 loops=1)
-   Buffers: shared hit=11
-   ->  Index Scan using account_usage_account_id_month_start_pk on account_usage  (cost=0.14..8.17 rows=1 width=30) (actual time=0.030..0.030 rows=1 loops=1)
+ Update on account_usage  (cost=0.14..8.17 rows=1 width=30) (actual time=1.993..2.002 rows=1 loops=1)
+   Buffers: shared hit=10 read=2 dirtied=1
+   ->  Index Scan using account_usage_account_id_month_start_pk on account_usage  (cost=0.14..8.17 rows=1 width=30) (actual time=0.020..0.023 rows=1 loops=1)
          Index Cond: ((account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid) AND (month_start = '2026-10-01'::date))
          Buffers: shared hit=2
  Planning:
    Buffers: shared hit=87
- Planning Time: 0.623 ms
- Execution Time: 0.268 ms
+ Planning Time: 0.558 ms
+ Execution Time: 3.086 ms
 (9 rows)
 
 ROLLBACK
 BEGIN
                                                                      QUERY PLAN                                                                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------
- Update on user_usage  (cost=0.27..8.30 rows=1 width=30) (actual time=0.167..0.172 rows=1 loops=1)
-   Buffers: shared hit=12
-   ->  Index Scan using user_usage_user_id_month_start_pk on user_usage  (cost=0.27..8.30 rows=1 width=30) (actual time=0.034..0.035 rows=1 loops=1)
+ Update on user_usage  (cost=0.27..8.30 rows=1 width=30) (actual time=0.154..0.158 rows=1 loops=1)
+   Buffers: shared hit=13 dirtied=1
+   ->  Index Scan using user_usage_user_id_month_start_pk on user_usage  (cost=0.27..8.30 rows=1 width=30) (actual time=0.025..0.025 rows=1 loops=1)
          Index Cond: ((user_id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8'::uuid) AND (month_start = '2026-10-01'::date))
          Buffers: shared hit=3
  Planning:
    Buffers: shared hit=87
- Planning Time: 0.998 ms
- Execution Time: 0.287 ms
+ Planning Time: 0.494 ms
+ Execution Time: 0.288 ms
 (9 rows)
 
 ROLLBACK
 
-=== 11. ledger insert (in tx, rolled back) ===
+=== 9. ledger insert (in tx, rolled back; runs 3-4 below are fully warm) ===
 BEGIN
                                            QUERY PLAN                                           
 ------------------------------------------------------------------------------------------------
- Insert on requests  (cost=0.00..0.01 rows=0 width=0) (actual time=3.157..3.164 rows=0 loops=1)
-   Buffers: shared hit=175 read=3 dirtied=2
-   ->  Result  (cost=0.00..0.01 rows=1 width=293) (actual time=0.071..0.072 rows=1 loops=1)
+ Insert on requests  (cost=0.00..0.01 rows=0 width=0) (actual time=0.841..0.844 rows=0 loops=1)
+   Buffers: shared hit=137 dirtied=1
+   ->  Result  (cost=0.00..0.01 rows=1 width=293) (actual time=0.070..0.070 rows=1 loops=1)
          Buffers: shared hit=10
  Planning:
    Buffers: shared hit=9
- Planning Time: 0.109 ms
- Trigger for constraint requests_account_id_accounts_id_fk: time=1.427 calls=1
- Trigger for constraint requests_user_id_users_id_fk: time=0.679 calls=1
- Trigger for constraint requests_account_plan_id_plans_id_fk: time=0.672 calls=1
- Trigger for constraint requests_user_plan_id_plans_id_fk: time=0.114 calls=1
- Execution Time: 6.111 ms
+ Planning Time: 0.113 ms
+ Trigger for constraint requests_account_id_accounts_id_fk: time=0.753 calls=1
+ Trigger for constraint requests_user_id_users_id_fk: time=0.440 calls=1
+ Trigger for constraint requests_account_plan_id_plans_id_fk: time=0.594 calls=1
+ Trigger for constraint requests_user_plan_id_plans_id_fk: time=0.091 calls=1
+ Execution Time: 2.749 ms
 (12 rows)
+
+ROLLBACK
+BEGIN
+                                           QUERY PLAN                                           
+------------------------------------------------------------------------------------------------
+ Insert on requests  (cost=0.00..0.01 rows=0 width=0) (actual time=0.176..0.176 rows=0 loops=1)
+   Buffers: shared hit=15 dirtied=1
+   ->  Result  (cost=0.00..0.01 rows=1 width=293) (actual time=0.006..0.006 rows=1 loops=1)
+         Buffers: shared hit=1
+ Planning Time: 0.020 ms
+ Trigger for constraint requests_account_id_accounts_id_fk: time=0.056 calls=1
+ Trigger for constraint requests_user_id_users_id_fk: time=0.077 calls=1
+ Trigger for constraint requests_account_plan_id_plans_id_fk: time=0.073 calls=1
+ Trigger for constraint requests_user_plan_id_plans_id_fk: time=0.063 calls=1
+ Execution Time: 0.461 ms
+(10 rows)
 
 ROLLBACK
 
 === reference: history page query (per account) ===
                                                                        QUERY PLAN                                                                       
 --------------------------------------------------------------------------------------------------------------------------------------------------------
- Limit  (cost=0.42..18.44 rows=21 width=40) (actual time=4.394..4.489 rows=21 loops=1)
-   Buffers: shared hit=1240 read=7 dirtied=8
-   ->  Index Scan using requests_account_recent_idx on requests  (cost=0.42..152369.34 rows=177595 width=40) (actual time=4.392..4.480 rows=21 loops=1)
+ Limit  (cost=0.42..19.99 rows=21 width=39) (actual time=0.077..0.201 rows=21 loops=1)
+   Buffers: shared hit=26
+   ->  Index Scan using requests_account_recent_idx on requests  (cost=0.42..230731.93 rows=247606 width=39) (actual time=0.076..0.194 rows=21 loops=1)
          Index Cond: (account_id = '1e43d8c1-b037-4642-bc4f-692db9213684'::uuid)
-         Buffers: shared hit=1240 read=7 dirtied=8
+         Buffers: shared hit=26
  Planning:
-   Buffers: shared hit=206 dirtied=1
- Planning Time: 1.486 ms
- Execution Time: 4.531 ms
+   Buffers: shared hit=170 read=1 dirtied=1
+ Planning Time: 1.111 ms
+ Execution Time: 0.230 ms
 (9 rows)
 

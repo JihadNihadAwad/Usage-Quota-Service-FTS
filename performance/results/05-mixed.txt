@@ -8,8 +8,8 @@
  Container fts-db Healthy 
  Container fts-api Waiting 
  Container fts-api Healthy 
- Container fts-k6-run-d72dbc050e46 Creating 
- Container fts-k6-run-d72dbc050e46 Created 
+ Container fts-k6-run-79e49bc776f9 Creating 
+ Container fts-k6-run-79e49bc776f9 Created 
 
          /\      Grafana   /‾‾/  
     /\  /  \     |\  __   /  /   
@@ -34,396 +34,396 @@ running (00m02.0s), 00/51 VUs, 0 complete and 0 interrupted iterations
 traffic      [   2% ] 00/50 VUs  0m02.0s/1m40.0s
 planUpdate • [   0% ] waiting    48.0s
 
-running (00m03.0s), 01/51 VUs, 121 complete and 0 interrupted iterations
+running (00m03.0s), 01/51 VUs, 108 complete and 0 interrupted iterations
 traffic      [   3% ] 01/50 VUs  0m03.0s/1m40.0s
 planUpdate • [   0% ] waiting    47.0s
 
-running (00m04.0s), 01/51 VUs, 263 complete and 0 interrupted iterations
+running (00m04.0s), 01/51 VUs, 252 complete and 0 interrupted iterations
 traffic      [   4% ] 01/50 VUs  0m04.0s/1m40.0s
 planUpdate • [   0% ] waiting    46.0s
 
-running (00m05.0s), 02/51 VUs, 438 complete and 0 interrupted iterations
+running (00m05.0s), 02/51 VUs, 436 complete and 0 interrupted iterations
 traffic      [   5% ] 02/50 VUs  0m05.0s/1m40.0s
 planUpdate • [   0% ] waiting    45.0s
 
-running (00m06.0s), 02/51 VUs, 637 complete and 0 interrupted iterations
+running (00m06.0s), 02/51 VUs, 677 complete and 0 interrupted iterations
 traffic      [   6% ] 02/50 VUs  0m06.0s/1m40.0s
 planUpdate • [   0% ] waiting    44.0s
 
-running (00m07.0s), 03/51 VUs, 860 complete and 0 interrupted iterations
+running (00m07.0s), 03/51 VUs, 933 complete and 0 interrupted iterations
 traffic      [   7% ] 03/50 VUs  0m07.0s/1m40.0s
 planUpdate • [   0% ] waiting    43.0s
 
-running (00m08.0s), 03/51 VUs, 1082 complete and 0 interrupted iterations
+running (00m08.0s), 03/51 VUs, 1186 complete and 0 interrupted iterations
 traffic      [   8% ] 03/50 VUs  0m08.0s/1m40.0s
 planUpdate • [   0% ] waiting    42.0s
 
-running (00m09.0s), 04/51 VUs, 1311 complete and 0 interrupted iterations
+running (00m09.0s), 04/51 VUs, 1452 complete and 0 interrupted iterations
 traffic      [   9% ] 04/50 VUs  0m09.0s/1m40.0s
 planUpdate • [   0% ] waiting    41.0s
 
-running (00m10.0s), 04/51 VUs, 1552 complete and 0 interrupted iterations
+running (00m10.0s), 04/51 VUs, 1712 complete and 0 interrupted iterations
 traffic      [  10% ] 04/50 VUs  0m10.0s/1m40.0s
 planUpdate • [   0% ] waiting    40.0s
 
-running (00m11.0s), 05/51 VUs, 1794 complete and 0 interrupted iterations
+running (00m11.0s), 05/51 VUs, 1980 complete and 0 interrupted iterations
 traffic      [  11% ] 05/50 VUs  0m11.0s/1m40.0s
 planUpdate • [   0% ] waiting    39.0s
 
-running (00m12.0s), 05/51 VUs, 2040 complete and 0 interrupted iterations
+running (00m12.0s), 05/51 VUs, 2234 complete and 0 interrupted iterations
 traffic      [  12% ] 05/50 VUs  0m12.0s/1m40.0s
 planUpdate • [   0% ] waiting    38.0s
 
-running (00m13.0s), 06/51 VUs, 2292 complete and 0 interrupted iterations
+running (00m13.0s), 06/51 VUs, 2492 complete and 0 interrupted iterations
 traffic      [  13% ] 06/50 VUs  0m13.0s/1m40.0s
 planUpdate • [   0% ] waiting    37.0s
 
-running (00m14.0s), 06/51 VUs, 2533 complete and 0 interrupted iterations
+running (00m14.0s), 06/51 VUs, 2774 complete and 0 interrupted iterations
 traffic      [  14% ] 06/50 VUs  0m14.0s/1m40.0s
 planUpdate • [   0% ] waiting    36.0s
 
-running (00m15.0s), 07/51 VUs, 2773 complete and 0 interrupted iterations
+running (00m15.0s), 07/51 VUs, 3058 complete and 0 interrupted iterations
 traffic      [  15% ] 07/50 VUs  0m15.0s/1m40.0s
 planUpdate • [   0% ] waiting    35.0s
 
-running (00m16.0s), 07/51 VUs, 3012 complete and 0 interrupted iterations
+running (00m16.0s), 07/51 VUs, 3312 complete and 0 interrupted iterations
 traffic      [  16% ] 07/50 VUs  0m16.0s/1m40.0s
 planUpdate • [   0% ] waiting    34.0s
 
-running (00m17.0s), 08/51 VUs, 3246 complete and 0 interrupted iterations
+running (00m17.0s), 08/51 VUs, 3584 complete and 0 interrupted iterations
 traffic      [  17% ] 08/50 VUs  0m17.0s/1m40.0s
 planUpdate • [   0% ] waiting    33.0s
 
-running (00m18.0s), 08/51 VUs, 3495 complete and 0 interrupted iterations
+running (00m18.0s), 08/51 VUs, 3836 complete and 0 interrupted iterations
 traffic      [  18% ] 08/50 VUs  0m18.0s/1m40.0s
 planUpdate • [   0% ] waiting    32.0s
 
-running (00m19.0s), 09/51 VUs, 3722 complete and 0 interrupted iterations
+running (00m19.0s), 09/51 VUs, 4093 complete and 0 interrupted iterations
 traffic      [  19% ] 09/50 VUs  0m19.0s/1m40.0s
 planUpdate • [   0% ] waiting    31.0s
 
-running (00m20.0s), 09/51 VUs, 3968 complete and 0 interrupted iterations
+running (00m19.9s), 09/51 VUs, 4359 complete and 0 interrupted iterations
 traffic      [  20% ] 09/50 VUs  0m20.0s/1m40.0s
 planUpdate • [   0% ] waiting    30.0s
 
-running (00m21.0s), 10/51 VUs, 4209 complete and 0 interrupted iterations
+running (00m20.9s), 10/51 VUs, 4620 complete and 0 interrupted iterations
 traffic      [  21% ] 10/50 VUs  0m21.0s/1m40.0s
 planUpdate • [   0% ] waiting    29.0s
 
-running (00m22.0s), 11/51 VUs, 4444 complete and 0 interrupted iterations
+running (00m21.9s), 11/51 VUs, 4870 complete and 0 interrupted iterations
 traffic      [  22% ] 11/50 VUs  0m22.0s/1m40.0s
 planUpdate • [   0% ] waiting    28.0s
 
-running (00m23.0s), 11/51 VUs, 4687 complete and 0 interrupted iterations
+running (00m22.9s), 11/51 VUs, 5139 complete and 0 interrupted iterations
 traffic      [  23% ] 11/50 VUs  0m23.0s/1m40.0s
 planUpdate • [   0% ] waiting    27.0s
 
-running (00m24.0s), 12/51 VUs, 4916 complete and 0 interrupted iterations
+running (00m23.9s), 12/51 VUs, 5392 complete and 0 interrupted iterations
 traffic      [  24% ] 12/50 VUs  0m24.0s/1m40.0s
 planUpdate • [   0% ] waiting    26.0s
 
-running (00m25.0s), 13/51 VUs, 5155 complete and 0 interrupted iterations
+running (00m24.9s), 13/51 VUs, 5646 complete and 0 interrupted iterations
 traffic      [  25% ] 13/50 VUs  0m25.0s/1m40.0s
 planUpdate • [   0% ] waiting    25.0s
 
-running (00m26.0s), 13/51 VUs, 5347 complete and 0 interrupted iterations
+running (00m25.9s), 13/51 VUs, 5904 complete and 0 interrupted iterations
 traffic      [  26% ] 13/50 VUs  0m26.0s/1m40.0s
 planUpdate • [   0% ] waiting    24.0s
 
-running (00m27.0s), 14/51 VUs, 5570 complete and 0 interrupted iterations
+running (00m26.9s), 14/51 VUs, 6163 complete and 0 interrupted iterations
 traffic      [  27% ] 14/50 VUs  0m27.0s/1m40.0s
 planUpdate • [   0% ] waiting    23.0s
 
-running (00m28.0s), 15/51 VUs, 5794 complete and 0 interrupted iterations
+running (00m27.9s), 15/51 VUs, 6387 complete and 0 interrupted iterations
 traffic      [  28% ] 15/50 VUs  0m28.0s/1m40.0s
 planUpdate • [   0% ] waiting    22.0s
 
-running (00m29.0s), 15/51 VUs, 6025 complete and 0 interrupted iterations
+running (00m28.9s), 15/51 VUs, 6608 complete and 0 interrupted iterations
 traffic      [  29% ] 15/50 VUs  0m29.0s/1m40.0s
 planUpdate • [   0% ] waiting    21.0s
 
-running (00m30.0s), 16/51 VUs, 6235 complete and 0 interrupted iterations
+running (00m29.9s), 16/51 VUs, 6828 complete and 0 interrupted iterations
 traffic      [  30% ] 16/50 VUs  0m30.0s/1m40.0s
 planUpdate • [   0% ] waiting    20.0s
 
-running (00m31.0s), 17/51 VUs, 6476 complete and 0 interrupted iterations
+running (00m30.9s), 17/51 VUs, 7028 complete and 0 interrupted iterations
 traffic      [  31% ] 17/50 VUs  0m31.0s/1m40.0s
 planUpdate • [   0% ] waiting    19.0s
 
-running (00m32.0s), 17/51 VUs, 6712 complete and 0 interrupted iterations
+running (00m31.9s), 17/51 VUs, 7284 complete and 0 interrupted iterations
 traffic      [  32% ] 17/50 VUs  0m32.0s/1m40.0s
 planUpdate • [   0% ] waiting    18.0s
 
-running (00m33.0s), 18/51 VUs, 6912 complete and 0 interrupted iterations
+running (00m32.9s), 18/51 VUs, 7548 complete and 0 interrupted iterations
 traffic      [  33% ] 18/50 VUs  0m33.0s/1m40.0s
 planUpdate • [   0% ] waiting    17.0s
 
-running (00m34.0s), 19/51 VUs, 7163 complete and 0 interrupted iterations
+running (00m33.9s), 19/51 VUs, 7814 complete and 0 interrupted iterations
 traffic      [  34% ] 19/50 VUs  0m34.0s/1m40.0s
 planUpdate • [   0% ] waiting    16.0s
 
-running (00m35.0s), 19/51 VUs, 7402 complete and 0 interrupted iterations
+running (00m34.9s), 19/51 VUs, 8090 complete and 0 interrupted iterations
 traffic      [  35% ] 19/50 VUs  0m35.0s/1m40.0s
 planUpdate • [   0% ] waiting    15.0s
 
-running (00m36.0s), 20/51 VUs, 7621 complete and 0 interrupted iterations
+running (00m35.9s), 20/51 VUs, 8324 complete and 0 interrupted iterations
 traffic      [  36% ] 20/50 VUs  0m36.0s/1m40.0s
 planUpdate • [   0% ] waiting    14.0s
 
-running (00m37.0s), 21/51 VUs, 7852 complete and 0 interrupted iterations
+running (00m36.9s), 21/51 VUs, 8567 complete and 0 interrupted iterations
 traffic      [  37% ] 21/50 VUs  0m37.0s/1m40.0s
 planUpdate • [   0% ] waiting    13.0s
 
-running (00m38.0s), 21/51 VUs, 8036 complete and 0 interrupted iterations
+running (00m37.9s), 21/51 VUs, 8786 complete and 0 interrupted iterations
 traffic      [  38% ] 21/50 VUs  0m38.0s/1m40.0s
 planUpdate • [   0% ] waiting    12.0s
 
-running (00m39.0s), 22/51 VUs, 8276 complete and 0 interrupted iterations
+running (00m38.9s), 22/51 VUs, 9037 complete and 0 interrupted iterations
 traffic      [  39% ] 22/50 VUs  0m39.0s/1m40.0s
 planUpdate • [   0% ] waiting    11.0s
 
-running (00m40.0s), 23/51 VUs, 8481 complete and 0 interrupted iterations
+running (00m39.9s), 23/51 VUs, 9299 complete and 0 interrupted iterations
 traffic      [  40% ] 23/50 VUs  0m40.0s/1m40.0s
 planUpdate • [   0% ] waiting    10.0s
 
-running (00m41.0s), 23/51 VUs, 8736 complete and 0 interrupted iterations
+running (00m40.9s), 23/51 VUs, 9560 complete and 0 interrupted iterations
 traffic      [  41% ] 23/50 VUs  0m41.0s/1m40.0s
 planUpdate • [   0% ] waiting    09.0s
 
-running (00m42.0s), 24/51 VUs, 8935 complete and 0 interrupted iterations
+running (00m41.9s), 24/51 VUs, 9802 complete and 0 interrupted iterations
 traffic      [  42% ] 24/50 VUs  0m42.0s/1m40.0s
 planUpdate • [   0% ] waiting    08.0s
 
-running (00m43.0s), 25/51 VUs, 9177 complete and 0 interrupted iterations
+running (00m42.9s), 25/51 VUs, 10067 complete and 0 interrupted iterations
 traffic      [  43% ] 25/50 VUs  0m43.0s/1m40.0s
 planUpdate • [   0% ] waiting    07.0s
 
-running (00m44.0s), 25/51 VUs, 9396 complete and 0 interrupted iterations
+running (00m43.9s), 25/51 VUs, 10308 complete and 0 interrupted iterations
 traffic      [  44% ] 25/50 VUs  0m44.0s/1m40.0s
 planUpdate • [   0% ] waiting    06.0s
 
-running (00m45.0s), 26/51 VUs, 9641 complete and 0 interrupted iterations
+running (00m44.9s), 26/51 VUs, 10549 complete and 0 interrupted iterations
 traffic      [  45% ] 26/50 VUs  0m45.0s/1m40.0s
 planUpdate • [   0% ] waiting    05.0s
 
-running (00m46.0s), 27/51 VUs, 9834 complete and 0 interrupted iterations
+running (00m45.9s), 27/51 VUs, 10821 complete and 0 interrupted iterations
 traffic      [  46% ] 27/50 VUs  0m46.0s/1m40.0s
 planUpdate • [   0% ] waiting    04.0s
 
-running (00m47.0s), 27/51 VUs, 10048 complete and 0 interrupted iterations
+running (00m46.9s), 27/51 VUs, 11059 complete and 0 interrupted iterations
 traffic      [  47% ] 27/50 VUs  0m47.0s/1m40.0s
 planUpdate • [   0% ] waiting    03.0s
 
-running (00m48.0s), 28/51 VUs, 10281 complete and 0 interrupted iterations
+running (00m47.9s), 28/51 VUs, 11296 complete and 0 interrupted iterations
 traffic      [  48% ] 28/50 VUs  0m48.0s/1m40.0s
 planUpdate • [   0% ] waiting    02.0s
 
-running (00m49.0s), 29/51 VUs, 10489 complete and 0 interrupted iterations
+running (00m48.9s), 29/51 VUs, 11522 complete and 0 interrupted iterations
 traffic      [  49% ] 29/50 VUs  0m49.0s/1m40.0s
 planUpdate • [   0% ] waiting    01.0s
 
-running (00m50.0s), 29/51 VUs, 10738 complete and 0 interrupted iterations
+running (00m49.9s), 29/51 VUs, 11790 complete and 0 interrupted iterations
 traffic      [  50% ] 29/50 VUs  0m50.0s/1m40.0s
 planUpdate • [   0% ] waiting    00.0s
-time="2026-10-20T18:10:05Z" level=info msg="plan updated mid-run (request ids mix-mvgzzbb4-t-*) - new rule snapshots from the next consume" source=console
+time="2026-10-22T16:04:35Z" level=info msg="plan updated mid-run (request ids mix-mvjqdmow-t-*) - new rule snapshots from the next consume" source=console
 
-running (00m51.0s), 30/51 VUs, 10953 complete and 0 interrupted iterations
+running (00m50.9s), 30/51 VUs, 12018 complete and 0 interrupted iterations
 traffic      [  51% ] 30/50 VUs  0m51.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m52.0s), 31/51 VUs, 11160 complete and 0 interrupted iterations
+running (00m51.9s), 31/51 VUs, 12277 complete and 0 interrupted iterations
 traffic      [  52% ] 31/50 VUs  0m52.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m53.0s), 31/51 VUs, 11397 complete and 0 interrupted iterations
+running (00m52.9s), 31/51 VUs, 12495 complete and 0 interrupted iterations
 traffic      [  53% ] 31/50 VUs  0m53.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m54.0s), 32/51 VUs, 11621 complete and 0 interrupted iterations
+running (00m53.9s), 32/51 VUs, 12761 complete and 0 interrupted iterations
 traffic      [  54% ] 32/50 VUs  0m54.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m55.0s), 33/51 VUs, 11865 complete and 0 interrupted iterations
+running (00m54.9s), 33/51 VUs, 13001 complete and 0 interrupted iterations
 traffic      [  55% ] 33/50 VUs  0m55.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m56.0s), 33/51 VUs, 12081 complete and 0 interrupted iterations
+running (00m55.9s), 33/51 VUs, 13244 complete and 0 interrupted iterations
 traffic      [  56% ] 33/50 VUs  0m56.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m57.0s), 34/51 VUs, 12292 complete and 0 interrupted iterations
+running (00m56.9s), 34/51 VUs, 13469 complete and 0 interrupted iterations
 traffic      [  57% ] 34/50 VUs  0m57.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m58.0s), 35/51 VUs, 12514 complete and 0 interrupted iterations
+running (00m57.9s), 35/51 VUs, 13708 complete and 0 interrupted iterations
 traffic      [  58% ] 35/50 VUs  0m58.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (00m59.0s), 35/51 VUs, 12741 complete and 0 interrupted iterations
+running (00m58.9s), 35/51 VUs, 13955 complete and 0 interrupted iterations
 traffic      [  59% ] 35/50 VUs  0m59.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m00.0s), 36/51 VUs, 12949 complete and 0 interrupted iterations
+running (00m59.9s), 36/51 VUs, 14217 complete and 0 interrupted iterations
 traffic      [  60% ] 36/50 VUs  1m00.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m01.0s), 37/51 VUs, 13186 complete and 0 interrupted iterations
+running (01m00.9s), 37/51 VUs, 14446 complete and 0 interrupted iterations
 traffic      [  61% ] 37/50 VUs  1m01.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m02.0s), 37/51 VUs, 13412 complete and 0 interrupted iterations
+running (01m01.9s), 37/51 VUs, 14707 complete and 0 interrupted iterations
 traffic      [  62% ] 37/50 VUs  1m02.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m03.0s), 38/51 VUs, 13626 complete and 0 interrupted iterations
+running (01m02.9s), 38/51 VUs, 14911 complete and 0 interrupted iterations
 traffic      [  63% ] 38/50 VUs  1m03.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m04.0s), 39/51 VUs, 13843 complete and 0 interrupted iterations
+running (01m03.9s), 39/51 VUs, 15156 complete and 0 interrupted iterations
 traffic      [  64% ] 39/50 VUs  1m04.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m05.0s), 39/51 VUs, 14051 complete and 0 interrupted iterations
+running (01m04.9s), 39/51 VUs, 15426 complete and 0 interrupted iterations
 traffic      [  65% ] 39/50 VUs  1m05.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m06.0s), 40/51 VUs, 14262 complete and 0 interrupted iterations
+running (01m05.9s), 40/51 VUs, 15666 complete and 0 interrupted iterations
 traffic      [  66% ] 40/50 VUs  1m06.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m07.0s), 41/51 VUs, 14481 complete and 0 interrupted iterations
+running (01m06.9s), 41/51 VUs, 15886 complete and 0 interrupted iterations
 traffic      [  67% ] 41/50 VUs  1m07.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m08.0s), 41/51 VUs, 14707 complete and 0 interrupted iterations
+running (01m07.9s), 41/51 VUs, 16103 complete and 0 interrupted iterations
 traffic      [  68% ] 41/50 VUs  1m08.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m09.0s), 42/51 VUs, 14942 complete and 0 interrupted iterations
+running (01m08.9s), 42/51 VUs, 16358 complete and 0 interrupted iterations
 traffic      [  69% ] 42/50 VUs  1m09.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m10.0s), 43/51 VUs, 15165 complete and 0 interrupted iterations
+running (01m09.9s), 43/51 VUs, 16599 complete and 0 interrupted iterations
 traffic      [  70% ] 43/50 VUs  1m10.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m11.0s), 43/51 VUs, 15393 complete and 0 interrupted iterations
+running (01m10.9s), 43/51 VUs, 16828 complete and 0 interrupted iterations
 traffic      [  71% ] 43/50 VUs  1m11.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m12.0s), 44/51 VUs, 15637 complete and 0 interrupted iterations
+running (01m11.9s), 44/51 VUs, 17085 complete and 0 interrupted iterations
 traffic      [  72% ] 44/50 VUs  1m12.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m13.0s), 45/51 VUs, 15860 complete and 0 interrupted iterations
+running (01m12.9s), 45/51 VUs, 17327 complete and 0 interrupted iterations
 traffic      [  73% ] 45/50 VUs  1m13.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m14.0s), 45/51 VUs, 16074 complete and 0 interrupted iterations
+running (01m13.9s), 45/51 VUs, 17560 complete and 0 interrupted iterations
 traffic      [  74% ] 45/50 VUs  1m14.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m15.0s), 46/51 VUs, 16300 complete and 0 interrupted iterations
+running (01m14.9s), 46/51 VUs, 17819 complete and 0 interrupted iterations
 traffic      [  75% ] 46/50 VUs  1m15.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m16.0s), 47/51 VUs, 16521 complete and 0 interrupted iterations
+running (01m15.9s), 47/51 VUs, 18051 complete and 0 interrupted iterations
 traffic      [  76% ] 47/50 VUs  1m16.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m17.0s), 47/51 VUs, 16760 complete and 0 interrupted iterations
+running (01m16.9s), 47/51 VUs, 18299 complete and 0 interrupted iterations
 traffic      [  77% ] 47/50 VUs  1m17.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m18.0s), 48/51 VUs, 16960 complete and 0 interrupted iterations
+running (01m17.9s), 48/51 VUs, 18510 complete and 0 interrupted iterations
 traffic      [  78% ] 48/50 VUs  1m18.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m19.0s), 49/51 VUs, 17190 complete and 0 interrupted iterations
+running (01m18.9s), 49/51 VUs, 18765 complete and 0 interrupted iterations
 traffic      [  79% ] 49/50 VUs  1m19.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m20.0s), 49/51 VUs, 17439 complete and 0 interrupted iterations
+running (01m19.9s), 49/51 VUs, 19003 complete and 0 interrupted iterations
 traffic      [  80% ] 49/50 VUs  1m20.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m21.0s), 48/51 VUs, 17663 complete and 0 interrupted iterations
+running (01m20.9s), 48/51 VUs, 19269 complete and 0 interrupted iterations
 traffic      [  81% ] 48/50 VUs  1m21.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m22.0s), 46/51 VUs, 17884 complete and 0 interrupted iterations
+running (01m21.9s), 46/51 VUs, 19528 complete and 0 interrupted iterations
 traffic      [  82% ] 46/50 VUs  1m22.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m23.0s), 43/51 VUs, 18099 complete and 0 interrupted iterations
+running (01m22.9s), 43/51 VUs, 19784 complete and 0 interrupted iterations
 traffic      [  83% ] 43/50 VUs  1m23.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m24.0s), 41/51 VUs, 18353 complete and 0 interrupted iterations
+running (01m23.9s), 41/51 VUs, 20043 complete and 0 interrupted iterations
 traffic      [  84% ] 41/50 VUs  1m24.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m25.0s), 38/51 VUs, 18573 complete and 0 interrupted iterations
+running (01m24.9s), 38/51 VUs, 20295 complete and 0 interrupted iterations
 traffic      [  85% ] 38/50 VUs  1m25.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m26.0s), 36/51 VUs, 18779 complete and 0 interrupted iterations
+running (01m25.9s), 36/51 VUs, 20552 complete and 0 interrupted iterations
 traffic      [  86% ] 36/50 VUs  1m26.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m27.0s), 33/51 VUs, 19012 complete and 0 interrupted iterations
+running (01m26.9s), 33/51 VUs, 20803 complete and 0 interrupted iterations
 traffic      [  87% ] 33/50 VUs  1m27.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m28.0s), 31/51 VUs, 19236 complete and 0 interrupted iterations
+running (01m27.9s), 31/51 VUs, 21040 complete and 0 interrupted iterations
 traffic      [  88% ] 31/50 VUs  1m28.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m29.0s), 28/51 VUs, 19457 complete and 0 interrupted iterations
+running (01m28.9s), 28/51 VUs, 21297 complete and 0 interrupted iterations
 traffic      [  89% ] 28/50 VUs  1m29.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m30.0s), 26/51 VUs, 19687 complete and 0 interrupted iterations
+running (01m29.9s), 26/51 VUs, 21552 complete and 0 interrupted iterations
 traffic      [  90% ] 26/50 VUs  1m30.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m31.0s), 23/51 VUs, 19919 complete and 0 interrupted iterations
-traffic      [  91% ] 23/50 VUs  1m31.0s/1m40.0s
+running (01m30.9s), 24/51 VUs, 21813 complete and 0 interrupted iterations
+traffic      [  91% ] 24/50 VUs  1m31.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m32.0s), 21/51 VUs, 20159 complete and 0 interrupted iterations
+running (01m31.9s), 21/51 VUs, 22037 complete and 0 interrupted iterations
 traffic      [  92% ] 21/50 VUs  1m32.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m33.0s), 18/51 VUs, 20371 complete and 0 interrupted iterations
+running (01m32.9s), 18/51 VUs, 22285 complete and 0 interrupted iterations
 traffic      [  93% ] 18/50 VUs  1m33.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m34.0s), 16/51 VUs, 20623 complete and 0 interrupted iterations
+running (01m33.9s), 16/51 VUs, 22544 complete and 0 interrupted iterations
 traffic      [  94% ] 16/50 VUs  1m34.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m35.0s), 13/51 VUs, 20844 complete and 0 interrupted iterations
+running (01m34.9s), 13/51 VUs, 22804 complete and 0 interrupted iterations
 traffic      [  95% ] 13/50 VUs  1m35.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m36.0s), 11/51 VUs, 21081 complete and 0 interrupted iterations
+running (01m35.9s), 11/51 VUs, 23087 complete and 0 interrupted iterations
 traffic      [  96% ] 11/50 VUs  1m36.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m37.0s), 08/51 VUs, 21316 complete and 0 interrupted iterations
-traffic      [  97% ] 08/50 VUs  1m37.0s/1m40.0s
+running (01m36.9s), 09/51 VUs, 23367 complete and 0 interrupted iterations
+traffic      [  97% ] 09/50 VUs  1m37.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m38.0s), 06/51 VUs, 21561 complete and 0 interrupted iterations
+running (01m37.9s), 06/51 VUs, 23613 complete and 0 interrupted iterations
 traffic      [  98% ] 06/50 VUs  1m38.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m39.0s), 03/51 VUs, 21811 complete and 0 interrupted iterations
+running (01m38.9s), 03/51 VUs, 23895 complete and 0 interrupted iterations
 traffic      [  99% ] 03/50 VUs  1m39.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
 
-running (01m40.0s), 01/51 VUs, 22028 complete and 0 interrupted iterations
+running (01m39.9s), 01/51 VUs, 24124 complete and 0 interrupted iterations
 traffic      [ 100% ] 01/50 VUs  1m40.0s/1m40.0s
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
      ✓ status 200
@@ -434,23 +434,23 @@ planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU
      ✓ plans readable
      ✓ plan patch applied mid-run
 
-   ✓ checks.........................: 100.00% ✓ 53085      ✗ 0    
-     data_received..................: 26 MB   255 kB/s
-     data_sent......................: 5.8 MB  58 kB/s
-     http_req_blocked...............: avg=5.98µs   min=1.05µs  med=4.36µs   p(90)=7.35µs   p(95)=8.8µs    p(99)=17.75µs  max=968.48µs
-     http_req_connecting............: avg=592ns    min=0s      med=0s       p(90)=0s       p(95)=0s       p(99)=0s       max=875.97µs
-     http_req_duration..............: avg=107.38ms min=1.29ms  med=100.84ms p(90)=216.68ms p(95)=240.47ms p(99)=276.16ms max=359.94ms
-       { expected_response:true }...: avg=107.38ms min=1.29ms  med=100.84ms p(90)=216.68ms p(95)=240.47ms p(99)=276.16ms max=359.94ms
-   ✓ http_req_failed................: 0.00%   ✓ 0          ✗ 22038
-     http_req_receiving.............: avg=104.52µs min=15.02µs med=92.77µs  p(90)=145.77µs p(95)=178.71µs p(99)=291.41µs max=8.87ms  
-     http_req_sending...............: avg=28.27µs  min=4.02µs  med=20.71µs  p(90)=46.06µs  p(95)=55.81µs  p(99)=102.37µs max=5.38ms  
-     http_req_tls_handshaking.......: avg=0s       min=0s      med=0s       p(90)=0s       p(95)=0s       p(99)=0s       max=0s      
-     http_req_waiting...............: avg=107.25ms min=1.21ms  med=100.7ms  p(90)=216.56ms p(95)=240.32ms p(99)=275.94ms max=359.81ms
-     http_reqs......................: 22038   220.386964/s
-     iteration_duration.............: avg=107.64ms min=1.41ms  med=101.08ms p(90)=216.94ms p(95)=240.81ms p(99)=276.48ms max=360.18ms
-     iterations.....................: 22037   220.376964/s
+   ✓ checks.........................: 100.00% ✓ 58101      ✗ 0    
+     data_received..................: 28 MB   279 kB/s
+     data_sent......................: 6.3 MB  63 kB/s
+     http_req_blocked...............: avg=6.01µs  min=1.08µs   med=4.39µs  p(90)=7.05µs   p(95)=7.96µs   p(99)=19.87µs  max=1.59ms 
+     http_req_connecting............: avg=532ns   min=0s       med=0s      p(90)=0s       p(95)=0s       p(99)=0s       max=1.44ms 
+     http_req_duration..............: avg=98.06ms min=113.57µs med=76.06ms p(90)=200.35ms p(95)=291.65ms p(99)=446.76ms max=1.26s  
+       { expected_response:true }...: avg=98.06ms min=113.57µs med=76.06ms p(90)=200.35ms p(95)=291.65ms p(99)=446.76ms max=1.26s  
+   ✓ http_req_failed................: 0.00%   ✓ 0          ✗ 24128
+     http_req_receiving.............: avg=97.58µs min=14µs     med=89.41µs p(90)=128.9µs  p(95)=150.82µs p(99)=262.39µs max=16.67ms
+     http_req_sending...............: avg=27.18µs min=3.66µs   med=21.14µs p(90)=46.11µs  p(95)=53.11µs  p(99)=80.16µs  max=4.11ms 
+     http_req_tls_handshaking.......: avg=0s      min=0s       med=0s      p(90)=0s       p(95)=0s       p(99)=0s       max=0s     
+     http_req_waiting...............: avg=97.93ms min=0s       med=75.91ms p(90)=200.23ms p(95)=291.57ms p(99)=446.59ms max=1.26s  
+     http_reqs......................: 24128   241.403023/s
+     iteration_duration.............: avg=98.37ms min=1.25ms   med=76.42ms p(90)=200.74ms p(95)=292.3ms  p(99)=447.06ms max=1.26s  
+     iterations.....................: 24127   241.393018/s
      vus............................: 1       min=0        max=49 
      vus_max........................: 51      min=51       max=51 
-running (01m40.0s), 00/51 VUs, 22037 complete and 0 interrupted iterations
+running (01m39.9s), 00/51 VUs, 24127 complete and 0 interrupted iterations
 traffic    ✓ [ 100% ] 00/50 VUs  1m40s          
 planUpdate ✓ [ 100% ] 1 VUs      00m00.2s/10m0s  1/1 iters, 1 per VU

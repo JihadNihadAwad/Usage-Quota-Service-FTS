@@ -41,10 +41,10 @@ profile talking to `http://api:3000` over that network).
   account plans the two unit rules; the first two predate the scaling
   stage and carry the stage 02-06 history
 - accepted requests across the eight loadtest ledgers after the
-  2026-10-20 run sets: ~200k on account 1 (the stage 02-04 target),
-  ~10k on account 2, ~6k on each of accounts 3-8
-- 839 users, 48 accounts in the database overall (loadtest, demo, probe
-  accounts; 342,670 ledger rows after the 2026-10-20 run sets)
+  2026-10-22 run sets: ~380k on account 1 (the stage 02-04 target across
+  three run sets), ~14k on account 2, ~8k on each of accounts 3-8
+- 839 users, 51 accounts in the database overall (loadtest, demo, probe
+  accounts; 500,556 ledger rows after the 2026-10-22 run sets)
 
 ## Stage parameters
 
@@ -58,15 +58,16 @@ profile talking to `http://api:3000` over that network).
 | 06-multi-account | 100 | 30 s | 50 VUs per account, two independent accounts |
 | 07-account-scaling | 100 | 30 s | 12-13 VUs per account, EIGHT accounts, api pool at default 10 |
 | 07 (pool 50) | 100 | 30 s | same stage, `POOL_MAX=50` on the api container |
-| 08-capacity | 10/50/100/250/500/1000 | 30 s each | fixed client count; pool 50 (one point repeated at pool 10) |
+| 08-capacity | 10/50/100/250/500/1000 | 30 s each | fixed client count; pool 50 (stage 07's pool-10 point doubles as the pool comparison) |
 | 09-saturation | arrival 500→1000→1500/s | 60 s | fixed arrival rate, preAllocatedVUs 1000, maxVUs 4000 |
 
 The 2026-10-19 set covered stages 01-07 plus pool experiments (results
-`07-account-scaling*`); the 2026-10-20 morning set re-ran 01-07 on the
-counter-optimized code; the 2026-10-20 afternoon set added the capacity
-sweep (`08-capacity-*`), the saturation run, and the cost probes
-(`consume-breakdown.txt`, `explain-consume-path.txt`). All committed
-captures are from the 2026-10-20 sets.
+`07-account-scaling*`); the 2026-10-20 sets re-ran 01-07 on the
+counter-optimized code and added the capacity sweep, the saturation run,
+and the cost probes; the **2026-10-22 set** (all captures in this
+directory) re-ran everything after the steady-state consume rework
+(lock-first counter creation, dead partial indexes dropped) — stage 04
+167→174/s, stage 07 417→465/s.
 
 Every stage was followed by `npm run bench:invariants` (counters == ledger,
 for ALL loadtest accounts), and every run passed — including the
@@ -75,14 +76,18 @@ laptop under Docker are machine-specific, not absolute; the *relationships*
 (per-account ceiling, saturation behavior, cost split) are the
 significant results.
 
-## CPU telemetry (docker stats, sampled mid-run of the 400-VU knee probe)
+## CPU telemetry (docker stats, sampled mid-run of the high-client sweep points)
 
 | Container | CPU % (of its 2-CPU quota) | Reads as |
 | --------- | -------------------------- | -------- |
-| fts-db    | ~125–129%                  | ~62–65% busy |
-| fts-api   | ~115–119%                  | ~58–60% busy — the Node process's single JS thread is its ceiling |
+| fts-db    | ~125%                      | ~62% busy |
+| fts-api   | ~115%                      | ~58% busy — the Node process's single JS thread is its ceiling |
 | k6        | ~22–25%                    | load generator, single-digit need |
 
-Throughput was flat from 10 clients to 1000 (~360–420/s) while latency
-grew linearly: the wall is host CPU split across db and api (and the
-api's one JS thread), not any lock or the connection pool.
+Per-decision CPU at saturation, from the same run: (1.15 + 1.25) cores ÷
+465/s ≈ **5.2 ms across api and db combined**. (A 2026-10-20 note here
+divided 2.44 cores by a rate from a different run set, yielding "2.4 ms" —
+that mixed-source figure is superseded.) Throughput is flat from 10
+clients to 1000 while latency grows linearly: the wall is host CPU split
+across db and api (and the api's one JS thread), not any lock or the
+connection pool.

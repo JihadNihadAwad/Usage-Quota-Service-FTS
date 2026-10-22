@@ -61,24 +61,24 @@ captures and analysis in [performance/README.md](performance/README.md)):
 
 | Load                                              | Measured result                                                                                      |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 10 concurrent clients, eight accounts             | 412 decisions/s — this deployment's ceiling is already reached: host CPU                              |
-| 1000 concurrent clients, eight accounts          | 366 decisions/s, p95 3.2 s — throughput flat from 10 clients to 1000, zero failures, queueing only   |
-| Fixed arrival 500 → 1500 req/s                    | ~330/s served; the rest queues (no errors) — operating past capacity is latency, not failure          |
-| 100 concurrent clients, one account (100 users)   | 167 decisions/s — the per-account rate: one account's consumes serialize on its counter row (~6.8 ms) |
-| Reads (usage, history)                            | no counter lock: in the mixed stage they add ~59 requests/s on top of ~141 consume/s                  |
+| 10 concurrent clients, eight accounts             | 492 decisions/s — the ceiling of this deployment is reached with ten clients                            |
+| 1000 concurrent clients, eight accounts          | 382 decisions/s, p95 2.8 s — flat from 10 to 1000 clients; zero failures, pure queueing past the ceiling |
+| Fixed arrival 500 → 1500 req/s                    | ~294/s served; the rest queues (no errors) — operating past capacity is latency, not failure            |
+| 100 concurrent clients, one account (100 users)   | 174 decisions/s — the per-account rate: one account's consumes serialize on its counter row (~5.7 ms)   |
+| Reads (usage, history)                            | no counter lock: in the mixed stage they add ~68 requests/s on top of ~162 consume/s                   |
 
-Reading the numbers: two things bound this service, and they are different
-axes. Per **account**, consumes serialize on the account's counter row at
-~165 decisions/s — irrelevant in practice, since the largest plan (Pro)
-sustains 0.04 requests/s; the ceiling is ~140× what any plan can spend.
-In **aggregate**, throughput scales with concurrency until host CPU
-saturates — ~360–420 decisions/s on this laptop with a single api process
-(Node runs its JS on one thread; more capacity means more api processes,
-and correctness already lives in Postgres row locks, not in the api).
-Below saturation, throughput = concurrent clients ÷ latency; at
-saturation, wait = concurrent clients ÷ throughput. Past saturation
-nothing fails — requests queue and accounting stays exact, verified by a
-SQL invariant check after every benchmark stage.
+Reading the numbers: two different axes bound this service. Per **account**,
+consumes serialize on the account's counter row at ~174 decisions/s —
+irrelevant in practice, since the largest plan (Pro) sustains 0.04
+requests/s; the ceiling is ~150× what any plan can spend. In **aggregate**,
+throughput scales with concurrency until host CPU saturates — ~380–490
+decisions/s on this laptop with a single api process (Node runs its JS on
+one thread; more capacity means more api processes, and correctness
+already lives in Postgres row locks, not in the api). Below saturation,
+throughput ≈ concurrent clients ÷ latency; at saturation, wait ≈ concurrent
+clients ÷ throughput. Past saturation nothing fails — requests queue and
+accounting stays exact, verified by a SQL invariant check after every
+benchmark stage.
 
 After every benchmark stage a SQL check recomputes the accounting per
 account (`account counter == Σ user counters == Σ accepted ledger units`;
@@ -480,14 +480,14 @@ and the reasoning:
 
 ## Known limitations
 
-- **Per-account throughput ceiling** — ~165 decisions/s for a single
-  account (its consumes serialize on its counter row, ~140× the largest
+- **Per-account throughput ceiling** — ~174 decisions/s for a single
+  account (its consumes serialize on its counter row, ~150× the largest
   predefined plan's sustainable rate). Aggregate capacity is bounded by
   host CPU and the single api process (one Node thread for JS); measured
   headroom is two orders of magnitude beyond what any plan can spend.
-  Raising it further would mean batching the consume's statements
-  (measured 1.6×) or sharding counters, both declined for inspectability
-  ([analysis](performance/README.md)).
+  Raising the per-account rate further would mean batching the consume's
+  statements (measured 1.7×) or sharding counters, both declined for
+  inspectability ([analysis](performance/README.md)).
 - **Single instance** — correctness leans on database row locks, so a second
   api process would work but the design has not been validated for horizontal
   scale-out.

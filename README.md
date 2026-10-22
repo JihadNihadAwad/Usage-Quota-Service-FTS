@@ -417,7 +417,7 @@ answer `403 PLAN_IMMUTABLE`). Names are unique per account and scope.
 docker compose --profile test up -d --wait   # integration db (:5433)
 
 npm test                 # 48 unit tests (domain, rules, HTTP mapping — no db)
-npm run test:integration # 53 integration tests against real Postgres
+npm run test:integration # 54 integration tests against real Postgres
 npm run test:persistence # data survives an api container restart
 ```
 

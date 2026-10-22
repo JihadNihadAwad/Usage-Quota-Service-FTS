@@ -190,15 +190,6 @@ export const requests = pgTable(
     // and per user - stable sort even under concurrent inserts.
     index('requests_account_recent_idx').on(t.accountId, t.createdAt.desc(), t.id.desc()),
     index('requests_user_recent_idx').on(t.userId, t.createdAt.desc(), t.id.desc()),
-    // Partial indexes (only accepted rows) feed the monthly_request_cap counts
-    // cheaply - rejections don't bloat the count path (a partial index only
-    // contains the rows the count needs).
-    index('requests_account_month_accepted_idx')
-      .on(t.accountId, t.monthStart)
-      .where(sql`${t.accepted}`),
-    index('requests_user_month_accepted_idx')
-      .on(t.userId, t.monthStart)
-      .where(sql`${t.accepted}`),
     check('requests_units_positive_ck', sql`${t.units} > 0`),
     check('requests_consumed_nonnegative_ck', sql`${t.unitsConsumed} >= 0`),
     // Structural ledger invariants: a row is either a clean acceptance or a

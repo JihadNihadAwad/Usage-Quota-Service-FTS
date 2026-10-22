@@ -15,6 +15,13 @@
       "when": 1792529280000,
       "tag": "0001_usage_request_counts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792702080000,
+      "tag": "0002_drop_unused_request_indexes",
+      "breakpoints": true
     }
   ]
 }

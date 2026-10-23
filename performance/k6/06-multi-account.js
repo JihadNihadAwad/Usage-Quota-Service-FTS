@@ -1,9 +1,8 @@
-// Stage 06 - multi-account: 100 VUs pinned to TWO accounts (50 each, each VU
-// to its own user). If the per-account serialization were a system-wide
-// bottleneck, throughput would stay at the single-account ceiling (~163/s
-// on this rig) and the >250/s floor would fail. If accounts are truly
-// independent - different account_usage rows, different locks - throughput
-// should approach 2x the single-account number.
+// Stage 06 - multi-account: 100 VUs pinned to TWO accounts (50 each, each
+// VU to its own user). If the per-account lock were a system-wide
+// bottleneck, throughput would stay near the single-account rate (~163/s
+// here) and the >250/s floor would fail. Two accounts locking different
+// account_usage rows should approach twice the single-account number.
 //
 // Run: npm run bench:multi-account
 
@@ -16,7 +15,7 @@ export const options = {
   thresholds: {
     http_req_failed: ['rate<0.01'],
     checks: ['rate==1'],
-    // Floor: both accounts together must clearly beat ONE account's ceiling.
+    // Floor: both accounts together must clearly beat the single-account rate.
     http_reqs: ['rate>250'],
   },
   summaryTrendStats: TREND_STATS,

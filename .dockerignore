@@ -1,5 +1,3 @@
-# Keep build contexts small; local-only material (working notes,
-# secrets) stays out of every image.
 .git
 node_modules
 dist
@@ -10,7 +8,9 @@ temp
 .env.*
 *.md
 performance
+# the api image copies this one file in for bench:invariants
 !performance/check-invariants.ts
 tests
+assets
 .dockerignore
 docker-compose.yml

@@ -10,27 +10,30 @@ import { isUniqueViolation, uniqueViolationConstraint } from '../lib/pg-errors.j
 /**
  * The consume transaction.
  *
- * One READ COMMITTED transaction with explicit SQL for every critical
- * statement, so the locking protocol is inspectable statement by statement:
+ * One READ COMMITTED transaction, one explicit SQL statement per step, so
+ * the whole protocol can be read in order:
  *
- *   1. load user+plan and account+plan (ownership re-validated here, in tx)
- *   2. SELECT ... FOR UPDATE the account_usage row   <- lock #1 (serialization point)
- *   3. SELECT ... FOR UPDATE the user_usage row      <- lock #2 (fixed order: deadlock-free)
- *      (each counter row is created lazily on the month's FIRST consume,
- *      under the lock - steady state is one locked read, no setup)
- *   4. idempotency check under the locks (authoritative)
- *   5. pure evaluation over the locked snapshot (used_units and accepted
- *      request counts both live on the counter rows, so every rule reads O(1))
- *   6. if accepted: consume the full amount at both levels, incrementing the
+ *   1. load user+plan and account+plan (ownership re-checked here, in tx)
+ *   2. SELECT ... FOR UPDATE the account_usage row   <- lock #1
+ *   3. SELECT ... FOR UPDATE the user_usage row      <- lock #2
+ *      (always account row first, so concurrent requests for the same
+ *      account can never deadlock on each other; each counter row is
+ *      created here on the month's FIRST consume, under the lock -
+ *      steady state is one locked read, no setup)
+ *   4. replay check under the locks (the one that handles races; the
+ *      pre-check outside the transaction is only a fast path)
+ *   5. evaluate the rules against the locked counters (units used and
+ *      accepted requests both live on these rows, so no rule counts
+ *      anything)
+ *   6. if accepted: charge the full amount at both levels and bump the
  *      request counts in the same UPDATE (RETURNING the new totals)
- *   7. insert the ledger row: decision + rule snapshots + the exact response body
+ *   7. insert the request row: decision + rule snapshots + the response body
  *   8. COMMIT
  *
- * Why READ COMMITTED + explicit locks rather than SERIALIZABLE: our
- * contention pattern is a single hot row per account; pessimistic locking
- * gives deterministic behavior without SERIALIZABLE's retry storms.
- * Why not an application mutex: single-instance
- * only, and the locks must live with the data anyway.
+ * READ COMMITTED with explicit locks rather than SERIALIZABLE: the
+ * contention is one row per account, and explicit locks behave the same
+ * way every time, with no retry loop to write. An application mutex
+ * wouldn't survive a restart and wouldn't cover two api processes.
  */
 
 /** The transaction handle drizzle hands to the callback. */
@@ -48,7 +51,7 @@ interface LevelStateDto {
   remaining: number | null;
 }
 
-/** The wire-format decision body. Built once, stored, and returned verbatim on replays. */
+/** The wire-format decision body. Built once, stored, and sent back as-is on replays. */
 export interface ConsumeResponseBody {
   request_id: string;
   accepted: boolean;
@@ -83,10 +86,10 @@ export async function consume(
   const start = performance.now();
 
   // Fast path: replays of already-committed decisions skip the transaction
-  // entirely (stored body returned verbatim, no evaluation, no locks). The
-  // in-transaction check below stays authoritative against races - two
+  // entirely (stored body returned as-is, no evaluation, no locks). The
+  // in-transaction check below is the one that handles races - two
   // concurrent first-submissions of the same request_id both land here
-  // missing, then serialize on the account row lock.
+  // missing, then line up on the account row lock.
   const preexisting = await findStoredRequest(db, accountId, input.requestId);
   if (preexisting !== null) {
     const result = replayOrConflict(preexisting, input);
@@ -110,10 +113,9 @@ export async function consume(
     });
     return result;
   } catch (err) {
-    // Unreachable while the lock protocol holds - the (account_id, request_id)
-    // unique index is a structural backstop. If it ever fires, this losing
-    // transaction rolled back atomically (counters untouched), so recovering
-    // by replaying the winner is exactly correct.
+    // Unreachable while the lock protocol holds - if it ever fires, this
+    // losing transaction rolled back atomically (counters untouched), so
+    // replaying the winner is still correct.
     if (
       isUniqueViolation(err) &&
       uniqueViolationConstraint(err) === 'requests_account_request_key'
@@ -121,7 +123,7 @@ export async function consume(
       const winner = await findStoredRequest(db, accountId, input.requestId);
       if (winner !== null) {
         const result = replayOrConflict(winner, input);
-        logger.warn('consume unique-index backstop fired (lock protocol regression?)', {
+        logger.warn('consume unique index fired (lock protocol regression?)', {
           accountId,
           requestId: input.requestId,
         });
@@ -141,10 +143,9 @@ async function consumeInTransaction(
 
   // 1. Load the user with their plan, scoped to the calling account - a user
   // id from another account is indistinguishable from a nonexistent one.
-  // Done inside the transaction and BEFORE
-  // the lazy usage-row
-  // insert: that insert carries a foreign key on user_id, and an explicit
-  // 404 (not an FK violation) is the contract.
+  // This runs before the usage-row insert, which has a foreign key on
+  // user_id: loading first means the caller gets a 404 instead of a
+  // foreign-key error.
   const userRow = (
     await tx.execute(sql`
       select u.plan_id, p.rules as user_rules, p.scope as user_plan_scope
@@ -155,8 +156,8 @@ async function consumeInTransaction(
   ).rows[0];
   if (userRow === undefined) throw new NotFoundError('user');
   if (userRow.user_plan_scope !== 'user') {
-    // Unreachable through the API (assignment validates scope); a loud
-    // invariant tripwire beats silently evaluating the wrong kind of plan.
+    // Unreachable through the API (assignment validates scope); failing
+    // loudly here beats judging against the wrong kind of plan.
     throw new Error(
       `user ${input.userId} is assigned a '${String(userRow.user_plan_scope)}'-scoped plan - assignment invariant violated`,
     );
@@ -183,13 +184,13 @@ async function consumeInTransaction(
   const userPlanId = String(userRow.plan_id);
   const accountPlanId = String(accountRow.account_plan_id);
 
-  // 2. Lock the account counter row. This is the deliberate per-account
-  // serialization point: every consume for one account funnels through it,
-  // which is what makes idempotency checks and limit decisions race-free.
-  // The row also carries this month's accepted-request count, so the
-  // monthly_request_cap rule reads O(1) instead of counting ledger rows.
-  // A missing row means zero usage this month: it is created here, under
-  // the lock, so only the month's first consume pays for row setup.
+  // 2. Lock the account counter row. Every consume for one account passes
+  // through this lock, which is what makes idempotency checks and limit
+  // decisions race-free. The row also carries this month's accepted-request
+  // count, so the monthly_request_cap rule reads it instead of counting
+  // request rows. A missing row means zero usage this month: it is created
+  // here, under the lock, so only the month's first consume pays for row
+  // setup.
   const accountLocked = await lockOrCreateCounter(
     tx,
     'account_usage',
@@ -197,7 +198,7 @@ async function consumeInTransaction(
     accountId,
     month,
   );
-  // bigint arrives from the driver as a string - the deliberate conversion point.
+  // bigint arrives from the driver as a string; converted here in one place.
   const accountUsed = Number(accountLocked.used_units);
   const accountAcceptedRequests = Number(accountLocked.accepted_requests);
 
@@ -214,8 +215,8 @@ async function consumeInTransaction(
   const userUsed = Number(userLocked.used_units);
   const userAcceptedRequests = Number(userLocked.accepted_requests);
 
-  // 4. Idempotency under lock - the authoritative check. Concurrent
-  // duplicates that both missed the fast path serialize here.
+  // 4. Idempotency under lock. Concurrent duplicates that both missed the
+  // fast path line up here.
   const stored = (
     await tx.execute(sql`
       select user_id, units, response
@@ -234,10 +235,10 @@ async function consumeInTransaction(
     );
   }
 
-  // 5. The pure evaluator - everything above existed to produce this
-  // snapshot under lock (src/domain/decision.ts). The accepted-request
-  // counts come from the counter rows themselves (incremented on accept,
-  // step 6), so no rule ever scans the ledger.
+  // 5. Evaluate - the pure function in src/domain/decision.ts, over the
+  // counters locked above. The accepted-request counts come from the
+  // counter rows themselves (incremented on accept, step 6), so no rule
+  // ever scans the requests table.
   const decision: Decision = evaluateConsume(
     input.units,
     {
@@ -256,9 +257,8 @@ async function consumeInTransaction(
 
   // 6. If accepted, consume the FULL amount at both levels (the consume
   // model is all-or-nothing) and count the request once at each level.
-  // RETURNING hands back the authoritative post-update totals - no
-  // application-side arithmetic, no read-modify-write drift. The CHECK
-  // (>= 0) constraints backstop the ledger.
+  // RETURNING hands back the post-update totals - no application-side
+  // arithmetic, no read-modify-write drift.
   let accountUsedAfter = accountUsed;
   let userUsedAfter = userUsed;
   if (decision.accepted) {
@@ -289,8 +289,8 @@ async function consumeInTransaction(
     userUsedAfter = Number(userUpdated.used_units);
   }
 
-  // 7. The response body - built once, stored in the ledger, returned to the
-  // caller. Replays get this exact object back (content-identical).
+  // 7. The response body - built once, stored, returned to the caller.
+  // Replays get this object back as stored JSON.
   const response: ConsumeResponseBody = {
     request_id: input.requestId,
     accepted: decision.accepted,
@@ -303,9 +303,9 @@ async function consumeInTransaction(
     evaluated: { account_rules: accountRules, user_rules: userRules },
   };
 
-  // 8. The ledger row: the decision, the rule snapshots it was judged under,
-  // and the exact response body. The table's CHECK constraints structurally
-  // enforce "a rejection consumes nothing".
+  // 8. The request row: the decision, the rule snapshots it was judged
+  // under, and the response body. The table's CHECK constraints enforce
+  // "a rejection consumes nothing".
   await tx.execute(sql`
     insert into requests
       (account_id, user_id, request_id, units, month_start, accepted, units_consumed,
@@ -397,7 +397,7 @@ async function findStoredRequest(
   };
 }
 
-/** Same payload -> verbatim replay; different payload -> 409. */
+/** Same payload -> the stored response; different payload -> 409. */
 function replayOrConflict(stored: StoredRequest, input: ConsumeInput): ConsumeResult {
   if (stored.userId !== input.userId || stored.units !== input.units) {
     throw new ConflictError(

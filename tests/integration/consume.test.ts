@@ -13,7 +13,7 @@ import {
 import { BASIC_PLAN_ID, PREMIUM_PLAN_ID, STARTER_PLAN_ID } from '../../src/db/predefined.js';
 
 // The consume suite: happy path; every rejection class; replay and
-// replay-conflict; concurrency storms that must not exceed limits;
+// replay-conflict; concurrent requests that must not exceed limits;
 // account total == sum of accepted units.
 
 const pool: Pool = createTestPool();

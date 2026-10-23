@@ -1,12 +1,11 @@
-// Stage 04 - account-level contention: 100 VUs, each pinned to its OWN
-// user (no user-row collisions), all funneling through ONE account row.
-// Every consume must take the account counter lock, so throughput
-// converges to roughly 1/transaction-duration no matter how many VUs
-// pile on - the ceiling of a shared-counter design (analysis in
-// ../README.md).
+// Stage 04 - account contention: 100 VUs, each pinned to its own user (no
+// user-row collisions), all through one account. Every consume takes the
+// account counter lock, so throughput converges to roughly
+// 1/transaction-duration no matter how many clients are sent (analysis
+// in ../README.md).
 //
 // The thresholds gate correctness under load (no failures, all accepted)
-// plus a throughput floor (measured ceiling recorded in results/); the
+// plus a throughput floor (measured rate recorded in results/); the
 // latency distribution is informative, not a pass/fail signal.
 //
 // Run: npm run bench:contention-account

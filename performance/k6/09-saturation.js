@@ -1,11 +1,9 @@
 // Stage 09 - saturation: drive a fixed ARRIVAL RATE regardless of how fast
 // the service answers, stepping 500 -> 1000 -> 1500 requests/s over a
-// minute. Below the knee the service keeps up. Above it the queue grows
-// without bound, and from the outside that looks like: latency climbing
-// with each step, then k6 running out of VUs for in-flight requests
-// (dropped_iterations in the summary) - callers who keep sending at a rate
-// the deployment cannot serve. No requests fail and accounting stays
-// exact; the deployment is simply past capacity.
+// minute. Past what the service can serve, the queue grows: latency climbs
+// with each step until k6 runs out of VUs for in-flight requests
+// (dropped_iterations in the summary) - arrivals beyond that are never
+// sent. No requests fail, and the invariant check still passes afterwards.
 //
 // Run: npm run bench:saturation
 

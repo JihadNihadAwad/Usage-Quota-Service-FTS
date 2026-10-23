@@ -1,6 +1,6 @@
-// Per-run demo state, held SERVER-SIDE (client/server.ts). The API key never
+// Per-run demo state, held server-side (client/server.ts). The API key never
 // reaches the browser - only its display prefix does. A new run (Setup, or
-// Run all) resets the state and bootstraps a fresh account.
+// Run all) resets the state and creates a fresh account.
 
 export interface DemoState {
   /** Unique per setup run - prefixes every request_id so replays stay

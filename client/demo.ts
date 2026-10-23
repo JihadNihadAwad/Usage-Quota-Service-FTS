@@ -1,7 +1,6 @@
-// Headless demo runner: the same program as the web page, via the same
-// client/core code, printed as a transcript. Exits non-zero if any
-// expectation fails - doubles as an end-to-end check of every scenario
-// and check.
+// Headless demo runner: runs the same scenarios as the web page through
+// the same client/core code and prints a transcript. Exits non-zero if any
+// expectation fails.
 
 import { UsageApi } from './core/api.js';
 import { scenarioCatalog, runScenario, type ScenarioCategory } from './core/scenarios.js';

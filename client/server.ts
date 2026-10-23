@@ -1,11 +1,10 @@
 // The demo web server. Serves the static page, executes scenarios
 // server-side, and aggregates the live state view (account, users, usage,
 // plans) for the side panel. The browser never sees the API key - it lives
-// in this process's DemoState, and only the key PREFIX is ever rendered.
+// in this process's DemoState, and only the key prefix is ever rendered.
 //
-// The demo tool itself is intentionally unauthenticated (localhost /
-// compose-network convenience); it is NOT part of the
-// service's trust boundary. The usage API behind it does all real auth.
+// The demo server itself has no authentication; it is a localhost tool.
+// The usage API behind it does the real authentication.
 
 import { fileURLToPath } from 'node:url';
 import express, { type ErrorRequestHandler } from 'express';

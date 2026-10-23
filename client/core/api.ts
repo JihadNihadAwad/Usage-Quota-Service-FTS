@@ -5,9 +5,8 @@
 // path, body) is surfaced with each call so the demo can show the exact API
 // request next to its response.
 //
-// Consume semantics: a REJECTED quota decision is a 200 with
-// `accepted: false` in the body - only transport/protocol failures
-// throw here.
+// Consume: a rejected decision is a 200 with `accepted: false` in the
+// body - only transport and protocol failures throw here.
 
 export interface RequestInfo {
   method: string;
@@ -144,7 +143,7 @@ export class UsageApi {
     return { request, data: body as T };
   }
 
-  /** Unauthenticated bootstrap (the only unauthenticated call the demo makes). */
+  /** Account creation (the only unauthenticated call the demo makes). */
   createAccount(name: string): Promise<ApiResult<CreatedAccountDto>> {
     return this.call<CreatedAccountDto>(null, '/accounts', { method: 'POST', body: { name } });
   }

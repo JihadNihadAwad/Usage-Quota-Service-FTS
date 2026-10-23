@@ -58,7 +58,7 @@ profile talking to `http://api:3000` over that network).
 | 06-multi-account | 100 | 30 s | 50 VUs per account, two independent accounts |
 | 07-account-scaling | 100 | 30 s | 12-13 VUs per account, EIGHT accounts, api pool at default 10 |
 | 07 (pool 50) | 100 | 30 s | same stage, `POOL_MAX=50` on the api container |
-| 08-capacity | 10/50/100/250/500/1000 | 30 s each | fixed client count; pool 50 (stage 07's pool-10 point doubles as the pool comparison) |
+| 08-capacity | 10/50/100/250/500/1000 | 30 s each | fixed client count; pool 50 (stage 07's pool-10 point is the pool comparison) |
 | 09-saturation | arrival 500→1000→1500/s | 60 s | fixed arrival rate, preAllocatedVUs 1000, maxVUs 4000 |
 
 The 2026-10-19 set covered stages 01-07 plus pool experiments (results

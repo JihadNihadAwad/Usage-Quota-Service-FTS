@@ -6,6 +6,10 @@
 --
 --   docker compose cp performance/probe-db-nosync.sql db:/tmp/probe-db-nosync.sql
 --   docker compose exec db pgbench -U postgres -c 1 -t 300 -f /tmp/probe-db-nosync.sql fts
+--
+-- month_start is pinned to the 2026-10 evidence run, and the charges stay
+-- (the invariant checker tolerates them; probe-cost.cjs is the variant
+-- that undoes its own).
 
 begin;
 set local synchronous_commit = off;

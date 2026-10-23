@@ -171,7 +171,7 @@ describe('shared plan definition, separate usage totals', () => {
     const u1 = await createUser(agent, key, 'u1', sharedPlanId);
     const u2 = await createUser(agent, key, 'u2', sharedPlanId);
 
-    // u1 burns most of THEIR allowance; u2 is untouched.
+    // u1 spends most of their allowance; u2 is untouched.
     const first = await agent
       .post('/v1/consume')
       .set('Authorization', `Bearer ${key}`)

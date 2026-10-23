@@ -53,8 +53,7 @@ export type UpdatePlanInput = z.infer<typeof UpdatePlanBody>;
 export const ConsumeBody = z.strictObject({
   user_id: uuid,
   request_id: z.string().min(1).max(200),
-  // Positive whole number; the 1e12 cap matches the rule-config bound so a
-  // request can never exceed every representable allowance.
+  // Positive whole number, capped at the same bound as rule values.
   units: z.number().int().min(1).max(MAX_RULE_VALUE),
 });
 export type ConsumeInput = z.infer<typeof ConsumeBody>;

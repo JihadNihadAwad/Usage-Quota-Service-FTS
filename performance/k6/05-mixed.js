@@ -1,9 +1,9 @@
 // Stage 05 - mixed workload: ramp 10 -> 50 VUs over ~100s with reads mixed
-// in (70% consume / 15% usage / 10% history / 5% plan catalog), while ONE
+// in (70% consume / 15% usage / 10% history / 5% plan catalog), while one
 // plan PATCH lands mid-ramp. Rules are re-read under the counter lock on
 // every consume, so the change applies to in-flight traffic with no
-// restart and no redeploy - and the ledger snapshots the new rules from
-// the next request onward.
+// restart, and request rows store the new rules from the next request
+// onward.
 //
 // Run: npm run bench:mixed
 

@@ -18,9 +18,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 # tsc does not copy the committed SQL migrations - bring them (and the
 # drizzle meta journal) along for the programmatic migrator at startup.
-# The post-benchmark invariant checker also runs in this container (node
-# type-strips .ts natively), over the compose network - the benchmark flow
-# never needs a host-published db port.
+# The benchmark invariant checker (bench:invariants) also runs here;
+# node type-strips .ts natively.
 COPY --from=build /app/src/db/migrations ./dist/db/migrations
 COPY performance/check-invariants.ts ./tools/check-invariants.ts
 USER node

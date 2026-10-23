@@ -7,10 +7,10 @@ import { MonthlyRequestCapRule } from './monthly-request-cap.js';
  * The shape stored in plans.rules (JSONB), validated whenever a plan is
  * created or updated through the API.
  *
- * Strict: an unknown key is a typo and must fail loudly, not be silently
+ * Strict: an unknown key is a typo and should fail validation, not be
  * stored and then ignored. At least one rule must be configured - a plan
  * that limits nothing is almost certainly a mistake (an allowance of 0
- * expresses "blocked at this level" when that is genuinely wanted).
+ * expresses "blocked at this level").
  */
 export const RulesSchema = z
   .strictObject({

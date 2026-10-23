@@ -1,10 +1,9 @@
 import type { Rules } from '../domain/rules/schemas.js';
 
-// The predefined plans, present from the moment the service starts (seeded
-// idempotently at container startup).
-// The ids are fixed, deliberately memorable UUIDs so scripts, the demo
-// client, and psql can hard-reference them. The seed upserts by id, so
-// these are stable across deployments.
+// The predefined plans, seeded idempotently at container startup.
+// The ids are fixed so scripts, the demo client, and psql can
+// hard-reference them; the seed upserts by id, so they are stable
+// across deployments.
 
 export type { Rules };
 

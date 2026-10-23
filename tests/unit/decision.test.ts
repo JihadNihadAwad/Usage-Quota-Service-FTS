@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateConsume, type LevelContext } from '../../src/domain/decision.js';
 
-// Example scenario: an account plan of 10,000/mo + 100/req over a user
+// The running example: an account plan of 10,000/mo + 100/req over a user
 // plan of 1,000/mo + 20/req.
 const ACCOUNT: LevelContext = {
   level: 'account',

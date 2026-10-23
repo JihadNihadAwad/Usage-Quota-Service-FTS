@@ -1,9 +1,9 @@
 // Stage 07 - account scaling: 100 VUs spread across ALL seeded accounts
-// (eight at the time of writing). Stage 06 proved two accounts serialize
-// independently; this stage pushes the tenant count far enough that the
-// first ceiling which is NOT a per-account lock shows up - on this stack,
-// the api's Postgres connection pool (pg's default of 10, exposed as the
-// POOL_MAX knob).
+// (eight at the time of writing). Stage 06 showed two accounts locking
+// different rows run independently; this stage spreads the load wide
+// enough to find what limits total throughput. Measured on this stack:
+// not the connection pool - pool 10 and pool 50 land within noise
+// (results/07-account-scaling*) - but host CPU.
 //
 // The stage file is identical for both runs; the pool size is set on the api
 // container between them, and RESULT_NAME keeps the outputs apart:

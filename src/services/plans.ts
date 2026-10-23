@@ -116,10 +116,10 @@ async function getOwnedOrPredefinedPlan(db: Db, accountId: string, planId: strin
 }
 
 /**
- * Validation for plan ASSIGNMENT (accounts choosing their account plan,
- * users' plans). Checks existence, ownership, and scope match.
- * accountId null = bootstrap (no account exists yet) - only predefined plans
- * qualify, which is exactly what a brand-new account can reference.
+ * Validation for assigning a plan (an account choosing its account plan,
+ * a user's plan). Checks existence, ownership, and scope match.
+ * accountId null means no account exists yet - only predefined plans
+ * qualify, which is what a brand-new account can reference.
  */
 export async function resolveAssignablePlan(
   db: Db,

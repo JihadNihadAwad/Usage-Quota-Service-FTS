@@ -6,9 +6,9 @@ import type { Request, RequestHandler } from 'express';
 
 /**
  * Bearer authentication. The presented key is hashed; the hash is looked up
- * via the unique index on api_keys.key_hash - O(1), and nothing about the
- * plaintext ever touches the database. Missing and invalid keys get the same
- * 401 shape (no oracle for which part was wrong).
+ * via the unique index on api_keys.key_hash, and nothing about the
+ * plaintext ever touches the database. Missing and invalid keys get the
+ * same 401 (no oracle for which part was wrong).
  */
 export function requireAuth(db: Db): RequestHandler {
   return async (req, _res, next) => {

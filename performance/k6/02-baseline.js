@@ -1,7 +1,6 @@
 // Stage 02 - baseline: 2 VUs for 30s against all 100 users, 70% consume /
-// 30% reads. This is the steady-state stage: no artificial contention, just
-// the service doing its job. The service-level targets: p95 < 50 ms, no
-// failures, every decision accepted.
+// 30% reads. Steady state, no artificial contention. Targets: p95 < 50 ms,
+// no failures, every decision accepted.
 //
 // Run: npm run bench:baseline
 

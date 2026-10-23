@@ -1,9 +1,9 @@
 // Stage 08 - capacity sweep: a fixed number of concurrent clients for a
 // fixed duration, everything set from the environment. Run it at several
-// VU counts and the aggregate capacity curve appears: throughput rises
-// with clients until the first shared limit binds, then flattens while
-// latency keeps growing. No throughput floor - capacity is the measured
-// variable, so the stage must be able to report a low number.
+// VU counts to trace the capacity curve: throughput rises with clients
+// up to the first shared limit, then flattens while latency keeps
+// growing. No throughput floor - the stage must be able to report a low
+// number.
 //
 //   VUS=1000 RESULT_NAME=08-capacity-vus1000 npm run bench:capacity
 //

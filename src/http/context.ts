@@ -1,7 +1,7 @@
 /**
  * Request context attached by the auth middleware. The account is ALWAYS
  * derived from the verified API key - never from caller-supplied ids - so
- * every downstream query is scoped by construction.
+ * every downstream query stays inside one account.
  */
 export interface AuthContext {
   accountId: string;

@@ -1,8 +1,7 @@
-// Stage 03 - single-user contention: 25 VUs, every request for the SAME
-// user through the SAME account. Both counter rows are hot: each request
-// queues on the account lock and then the user lock, so latency here IS
-// the serialization the design accepts - the queue depth shows up
-// directly in the p95/p99.
+// Stage 03 - single-user contention: 25 VUs, every request for the same
+// user through the same account. Each request queues on the account lock
+// and then the user lock, so the queue depth reads directly off the
+// p95/p99.
 //
 // Informative stage: no latency threshold. What must hold: no transport
 // failures and every decision accepted.

@@ -1,6 +1,6 @@
 // Stage 01 - smoke: one VU, one pass, correctness before speed.
 //
-// Proves the stack under load-test conditions: two accepts, a rule
+// Checks the stack under load-test conditions: two accepts, a rule
 // rejection (max_per_request), and an idempotent replay that is not
 // charged twice. History is checked newest-first, so reruns of this
 // stage accumulate rows without breaking the assertions.

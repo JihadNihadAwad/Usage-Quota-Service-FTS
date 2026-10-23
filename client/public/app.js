@@ -1,6 +1,6 @@
-// Vanilla-JS demo page: scenario and check buttons, result cards with
-// the exact API request per step, and a live-state side panel. The heavy
-// lifting (auth, orchestration, assertions) is server-side in client/core -
+// Vanilla-JS demo page: scenario and check buttons, result cards showing
+// the API request for each step, and a live-state side panel. The actual
+// work (auth, orchestration, assertions) is server-side in client/core;
 // this file only renders.
 
 const $buttons = document.getElementById('buttons');
@@ -27,7 +27,7 @@ async function loadScenarios() {
   }
 
   $status.textContent = data.setup
-    ? `Run ${data.runId} ready — account bootstrapped, key held server-side.`
+    ? `Run ${data.runId} ready — account created, key held server-side.`
     : 'No account yet — click 1 (Setup) or 7 (Run all).';
 }
 
@@ -205,7 +205,7 @@ function renderPanel(data) {
     const p = document.createElement('p');
     p.className = 'muted';
     p.textContent =
-      'No account yet. Run Setup or Run all to bootstrap one; this panel then shows the live plan and usage state.';
+      'No account yet. Run Setup or Run all to create one; this panel then shows the live plan and usage state.';
     $panelBody.appendChild(p);
     return;
   }

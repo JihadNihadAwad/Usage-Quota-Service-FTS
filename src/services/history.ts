@@ -85,7 +85,7 @@ export async function listHistory(
     })
     .from(requests)
     .where(and(...conditions))
-    // DESC NULLS LAST is not decoration: the recent-history indexes are
+    // DESC NULLS LAST must match the index: the recent-history indexes are
     // declared (..., created_at DESC NULLS LAST, id DESC NULLS LAST), and a
     // plain DESC means NULLS FIRST to Postgres - a different sort order,
     // which blocked index-backed ordering entirely (every page did a seq

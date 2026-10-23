@@ -4,10 +4,9 @@ import { closePool, getDb, type Db } from './client.js';
 import { PREDEFINED_PLANS } from './predefined.js';
 import { plans } from './schema.js';
 
-// Idempotency matters twice here: predefined plans must exist from the moment
-// the service starts, and containers restart - so re-running must be a no-op.
-// We upsert by fixed id and report insert/update/unchanged so the startup log
-// tells the truth about what happened.
+// Predefined plans must exist from the moment the service starts, and
+// containers restart, so re-running must be a no-op. Upsert by fixed id and
+// report insert/update/unchanged so the startup log says what happened.
 
 // jsonb normalizes object key order, so a naive JSON.stringify comparison of
 // a round-tripped rules object against the source literal can mismatch purely

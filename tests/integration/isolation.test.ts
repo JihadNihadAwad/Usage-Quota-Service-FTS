@@ -50,13 +50,13 @@ describe('account isolation', () => {
           .send({ plan_id: PREMIUM_PLAN_ID }),
     ];
 
-    // Every read/write against a foreign user is a masked 404...
+    // Every read/write against a foreign user answers 404,
     for (const probe of probes) {
       const foreign = await probe();
       expect(foreign.status).toBe(404);
       expect((foreign.body as { error: { message: string } }).error.message).toBe('user not found');
     }
-    // ...byte-identical to the same probe against a random uuid.
+    // with the same body as for a user that does not exist.
     const foreignGet = await agent
       .get(`/v1/users/${alice.id}`)
       .set('Authorization', `Bearer ${rival.key}`);

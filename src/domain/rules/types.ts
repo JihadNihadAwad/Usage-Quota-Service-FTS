@@ -12,7 +12,7 @@ export type RuleId = 'max_per_request' | 'monthly_allowance' | 'monthly_request_
 
 /** Upper bound for any configured rule value - the same 1e12 cap that
  *  bounds request units (see src/http/dto.ts), so rule values and request
- *  sizes live on one scale. */
+ *  sizes share one scale. */
 export const MAX_RULE_VALUE = 1_000_000_000_000;
 
 /** One way a request can be denied. `message` is safe to show a caller. */

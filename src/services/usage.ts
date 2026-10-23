@@ -21,8 +21,8 @@ function toUsageView(monthStart: string, usedUnits: number, plan: PlanView): Usa
   return { month: monthStart, usedUnits, plan, allowance, remaining };
 }
 
-/** Current-month usage for the calling account. A missing counter row means
- *  zero usage (lazy materialization). */
+/** Current-month usage for the calling account. A missing counter row
+ *  reads as zero usage. */
 export async function getAccountUsage(
   db: Db,
   accountId: string,

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { monthStart, monthStartFromParam } from '../../src/domain/month.js';
 
-// The UTC boundary case: Oct 31 23:59:59.999Z is still
-// October; one millisecond later it is November. These must stay green forever.
+// The UTC boundary case: Oct 31 23:59:59.999Z is still October; one
+// millisecond later it is November.
 describe('monthStart (UTC calendar months)', () => {
   it('returns the first day of the current UTC month', () => {
     expect(monthStart(new Date('2026-10-18T12:00:00.000Z'))).toBe('2026-10-01');

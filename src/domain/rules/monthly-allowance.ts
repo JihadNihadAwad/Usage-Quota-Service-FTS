@@ -11,11 +11,10 @@ import {
  * (the other required rule type, at both plan levels).
  * Stateful: compares the request against `allowance - used`.
  *
- * The zero-floor (Math.max(0, ...)) implements the plan-change semantics:
- * when a plan is downgraded below current usage, remaining reads 0 (never
- * negative) and consumption at that level is rejected until the month rolls
- * over or the allowance is raised. Config value 0 is valid and means the
- * level is blocked entirely.
+ * The zero-floor (Math.max(0, ...)) covers downgrades: when a plan is cut
+ * below current usage, remaining reads 0 (never negative) and consumption
+ * at that level is rejected until the month rolls over or the allowance
+ * is raised. Config value 0 is valid and means the level is blocked entirely.
  */
 export const MonthlyAllowanceRule: RuleDefinition = {
   id: 'monthly_allowance',

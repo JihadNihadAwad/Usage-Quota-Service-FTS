@@ -3,8 +3,9 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { closePool, getDb } from './client.js';
 
 // Under tsx this resolves to src/db/migrations. tsc does not copy .sql files
-// into dist, so the container entrypoint (src/start.ts) sets MIGRATIONS_DIR
-// to wherever the image copies the committed migrations.
+// into dist, so the Dockerfile copies the committed migrations to
+// dist/db/migrations - where the same fallback resolves from the compiled
+// container entrypoint (dist/start.js). MIGRATIONS_DIR overrides both.
 const migrationsFolder =
   process.env.MIGRATIONS_DIR ?? fileURLToPath(new URL('./migrations', import.meta.url));
 

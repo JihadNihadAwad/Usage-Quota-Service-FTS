@@ -1,4 +1,4 @@
-// Load-test dataset bootstrap - idempotent, run before any k6 stage:
+// Load-test dataset seed - idempotent, run before any k6 stage:
 //
 //   npm run bench:seed
 //
@@ -7,23 +7,21 @@
 //   - a custom account-scope plan with very generous limits (100M/month,
 //     10k/request), so stages measure locking and throughput, not rejections
 //   - a custom user-scope plan exercising ALL THREE rules (1M/month,
-//     1k/request, 1M accepted calls/month) - the request-cap rule forces the
-//     partial-index count query onto every consume, so the benchmark
-//     exercises the full rule path, not a shortcut
+//     1k/request, 1M accepted calls/month), so every consume runs the
+//     full rule path, not a shortcut
 //   - 100 users load-001 .. load-100, all on that account's user plan
 //
-// Why eight: stage 06 proved two tenants locking two different
-// account_usage rows serialize independently; the scaling stage (07) needs
-// enough parallel tenants to find the first ceiling that is NOT a per-account
-// lock - on this stack, the api's Postgres connection pool.
+// Why eight: stage 06 showed two tenants locking two different
+// account_usage rows run independently; the scaling stage (07) spreads
+// the load wide enough to find what limits total throughput.
 //
 // The state file holds a live admin key per account -> gitignored. Reuse is
 // keyed by the stored key still working (a GET /account probe), NOT by
 // account name: names are labels, not unique ids. If the state file is lost
-// while the db keeps its rows, the script simply bootstraps a fresh set of
-// accounts alongside the orphaned ones (there is no delete API); stages and
-// the invariant checker all read ids from the state file, so they follow
-// whichever dataset the file points at.
+// while the db keeps its rows, the script simply creates a fresh set of
+// accounts alongside the unreachable ones (there is no delete API); stages
+// and the invariant checker all read ids from the state file, so they
+// follow whichever dataset the file points at.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

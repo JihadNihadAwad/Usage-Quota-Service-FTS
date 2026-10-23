@@ -1,6 +1,6 @@
 /**
- * The ApiError hierarchy. Every deliberate client-facing failure throws one
- * of these; the central error handler maps them to the JSON envelope
+ * The ApiError hierarchy. Every client-facing failure throws one of
+ * these; the central error handler maps them to the JSON envelope
  * `{ error: { code, message, details? } }`. Anything else is a 500.
  */
 export class ApiError extends Error {
@@ -29,8 +29,7 @@ export class ValidationError extends ApiError {
 
 export class NotFoundError extends ApiError {
   constructor(resource = 'resource') {
-    // Foreign-tenant ids land here too - deliberately indistinguishable
-    // from nonexistent ones.
+    // Foreign-tenant ids land here too - same answer as nonexistent ones.
     super(404, 'NOT_FOUND', `${resource} not found`);
   }
 }

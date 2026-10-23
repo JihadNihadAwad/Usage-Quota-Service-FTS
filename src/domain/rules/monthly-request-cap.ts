@@ -7,10 +7,11 @@ import {
 } from './types.js';
 
 /**
- * monthly_request_cap - our extra rule (the extensibility demonstration):
+ * monthly_request_cap - a third rule beyond the two required ones, built
+ * the same way as the others to show what adding a rule looks like:
  * the maximum number of accepted requests per UTC month, independent of
  * units. Stateful: counts accepted requests this month at the level (the
- * consume transaction feeds it from the partial accepted-requests index).
+ * consume transaction reads the count off the usage counter rows).
  *
  * Interaction with account/user plans: identical to the other rules - the
  * user cap counts the user's accepted requests, the account cap counts all

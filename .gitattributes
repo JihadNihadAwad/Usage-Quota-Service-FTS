@@ -1,6 +1,5 @@
-# The dev host is Windows while every container is Linux. Force LF in
-# repo + working tree so Docker entrypoints never break on CRLF
-# (the classic "/bin/sh^M: bad interpreter" failure).
+# Windows dev host, Linux containers. Force LF so the container
+# entrypoints never see CRLF.
 * text=auto eol=lf
 *.png binary
 *.jpg binary

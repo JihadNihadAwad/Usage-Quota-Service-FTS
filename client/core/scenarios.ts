@@ -1,26 +1,23 @@
-// The demo program - ONE implementation shared by the web UI and the
-// headless runner, with expected outcomes asserted inline so the demo
-// doubles as an end-to-end check. If an expectation breaks, the card shows
-// FAIL and the headless runner exits non-zero.
+// The demo scenarios. The web page and the headless runner (demo.ts) run
+// the same ones, with the expected outcomes asserted inline - a broken
+// expectation shows FAIL on the card and a non-zero exit in the runner.
 //
-// Two sections, both rendered by the same machinery:
+//   Scenarios 1-7, in order (7 re-runs 1-6 from a fresh account):
+//     1. Setup      - create DocuFlow, alice (Basic) + bob (Premium)
+//     2. Small doc  - alice consumes 10 -> accepted at both levels
+//     3. Big doc    - alice requests 25 -> rejected by user max_per_request
+//     4. Tight plan - custom 50/mo account plan; 30 accepted, next 30
+//                     rejected by the shared account monthly_allowance
+//     5. Upgrade    - switch the account to Pro; the same call that just
+//                     failed is now accepted, with no client change
+//     6. Replay     - same request_id twice -> same decision, charged once
+//     7. Run all    - every scenario in order, from a fresh account
 //
-//   Scenarios 1-7 - the core demonstrations, in order:
-//     1. Setup        - bootstrap DocuFlow, alice (Basic) + bob (Premium)
-//     2. Small doc    - alice consumes 10 -> accepted at both levels
-//     3. Big doc      - alice requests 25 -> rejected by user max_per_request
-//     4. Tight plan   - custom 50/mo account plan; 30 accepted, next 30
-//                       rejected by the shared account monthly_allowance
-//     5. Upgrade      - switch the account to Pro; the SAME client call that
-//                       just failed is now accepted - no client code changed
-//     6. Replay       - same request_id twice -> identical decision, charged once
-//     7. Run all      - every scenario in order, from a fresh account
-//
-//   Checks 8-13 - additional behaviors worth verifying, all non-mutating for the state built by 1-7:
+//   Checks 8-13 - more behaviors; these don't change the state built by 1-7:
 //     8.  Isolation - a second account cannot see this one (404 masking)
 //     9.  Retry conflict - same request_id, different payload (409)
 //     10. Predefined plans are read-only (403)
-//     11. Usage - current AND previous months
+//     11. Usage - current and previous months
 //     12. History - keyset pagination with a cursor
 //     13. Plan scope rules - an account plan cannot be assigned to a user (400)
 
@@ -46,7 +43,7 @@ export interface StepResult {
   label?: string;
   /** The API call this step made - shown next to the response. */
   request?: RequestInfo;
-  /** HTTP status, when the expected outcome IS an error (409/403/404/400). */
+  /** HTTP status, when the expected outcome is an error (409/403/404/400). */
   status?: number;
   response?: unknown;
   note?: string;
@@ -75,8 +72,8 @@ function expectEq(actual: unknown, expected: unknown, label: string): void {
   }
 }
 
-/** Run a call that is EXPECTED to fail with a specific status + code; return
- *  the error (with its request info) for display. */
+/** Run a call that is expected to fail with a specific status + code;
+ *  return the error (with its request info) for display. */
 async function expectApiError(
   run: () => Promise<unknown>,
   status: number,
@@ -125,7 +122,7 @@ function requireSetup(state: DemoState): SetupIds {
   };
 }
 
-/** A compact one-line summary of a decision, for cards and the transcript. */
+/** One-line summary of a decision, shown on the card and in the transcript. */
 export function summarizeDecision(d: ConsumeDecisionDto): string {
   const levels = (lvl: 'account' | 'user') => {
     const s = d[lvl];
@@ -174,11 +171,11 @@ const SCENARIO_DEFS: ScenarioDef[] = [
   // ------------------------- scenarios (1-7) -------------------------
   {
     number: 1,
-    title: 'Setup - bootstrap the account and its users',
+    title: 'Setup - create the account and its users',
     category: 'scenario',
     needsSetup: false,
     async run({ api, state }) {
-      Object.assign(state, freshState()); // every Setup starts a fresh run + account
+      Object.assign(state, freshState()); // each Setup starts a fresh run
       const created = await api.createAccount('DocuFlow');
       state.apiKey = created.data.api_key.key;
       state.accountId = created.data.account.id;
@@ -195,7 +192,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
       return [
         {
           label:
-            'POST /v1/accounts - DocuFlow bootstrapped, API key issued (kept server-side, shown once)',
+            'POST /v1/accounts - DocuFlow created, API key issued (kept server-side, shown once)',
           request: created.request,
           response: {
             account: {
@@ -250,7 +247,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
       return [
         decisionStep('POST /v1/consume - alice, 10 units', call),
         {
-          note: "The same 10 units count against alice individually AND against DocuFlow's shared allowance.",
+          note: "The 10 units count against alice's plan and against the account's shared allowance.",
         },
       ];
     },
@@ -274,7 +271,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
 
       return [
         decisionStep('POST /v1/consume - alice, 25 units', call),
-        { note: 'The account had plenty of allowance left - the USER plan is what said no.' },
+        { note: "The account still had allowance left; alice's plan is what rejected it." },
       ];
     },
   },
@@ -286,8 +283,8 @@ const SCENARIO_DEFS: ScenarioDef[] = [
     async run({ api, state }) {
       const { key, bob } = requireSetup(state);
 
-      // Custom plan (demonstrates create + assign). Reused within a run so
-      // re-clicking this scenario doesn't 409 on the plan name.
+      // Create and assign a custom plan. It is kept in the run state so
+      // running this scenario twice doesn't hit the plan-name conflict.
       let planNote = 'created custom account plan "DocuFlow Trial" (50/month, 100/request)';
       let planId = state.customPlanId;
       if (planId === null) {
@@ -326,7 +323,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
         decisionStep('POST /v1/consume - bob, 30 units', first),
         decisionStep('POST /v1/consume - bob, another 30 units', second),
         {
-          note: 'bob is on Premium (10,000/month, 100/request) - his user plan is fine; the ACCOUNT plan is the blocker.',
+          note: "bob's plan allows 10,000/month; the account plan is what rejected it.",
         },
       ];
     },
@@ -355,9 +352,9 @@ const SCENARIO_DEFS: ScenarioDef[] = [
           request: patch.request,
           response: patch.data,
         },
-        decisionStep('POST /v1/consume - bob, 30 units, SAME client code as scenario 4', call),
+        decisionStep('POST /v1/consume - bob, 30 units (same call as scenario 4)', call),
         {
-          note: 'The client called consume identically; only the plan configuration changed. Changes apply without redeploying anything.',
+          note: 'The client made the same call; only the account\'s plan changed, with no restart.',
         },
       ];
     },
@@ -383,8 +380,8 @@ const SCENARIO_DEFS: ScenarioDef[] = [
         'both submissions are accepted decisions',
       );
       try {
-        // Content-identical, not byte-identical: jsonb normalizes key order
-        // - deep equality is the contract.
+        // jsonb normalizes key order, so compare with deep equality rather
+        // than string equality.
         deepStrictEqual(replay.data, first.data);
       } catch {
         throw new ExpectError('the replayed response differs from the original');
@@ -407,7 +404,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
           api.getAccountUsage(key),
         ),
         {
-          note: 'A crashed-and-retried caller gets the same decision and is never double-charged.',
+          note: 'A caller that resends the same request after a timeout gets the same decision and is not charged twice.',
         },
       ];
     },
@@ -445,8 +442,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
     async run({ api, state }) {
       const { key, alice } = requireSetup(state);
 
-      // A rival application bootstraps itself (unauthenticated by design)
-      // and then pokes at DocuFlow's user with ITS key.
+      // A second account with its own key, trying to reach DocuFlow's user.
       const rival = await api.createAccount('Rival Co');
       const rivalKey = rival.data.api_key.key;
 
@@ -467,13 +463,13 @@ const SCENARIO_DEFS: ScenarioDef[] = [
         'NOT_FOUND',
       );
 
-      // Sanity: DocuFlow's own key still sees alice.
+      // DocuFlow's own key still sees the user.
       const own = await api.getUser(key, alice);
       expectEq(own.data.external_id, 'alice', 'the owning key still sees the user');
 
       return [
         {
-          label: 'POST /v1/accounts - Rival Co bootstraps itself (gets its own key)',
+          label: 'POST /v1/accounts - Rival Co creates its own account (gets its own key)',
           request: rival.request,
           response: { account: { name: rival.data.account.name }, note: 'isolated tenant' },
         },
@@ -502,7 +498,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
           response: { error: { code: patchAttempt.code, message: patchAttempt.message } },
         },
         {
-          note: 'Foreign resources are indistinguishable from nonexistent ones - a 403 would leak that alice exists. Nothing was mutated.',
+          note: 'The second account gets the same 404 as for a nonexistent user, so it cannot tell that this user exists.',
         },
       ];
     },
@@ -585,7 +581,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
           response: { items: plans.data.items.map((p) => `${p.name} ${JSON.stringify(p.rules)}`) },
         },
         {
-          note: 'Predefined plans are platform-owned; accounts copy the idea by creating their own custom plan.',
+          note: 'Predefined plans cannot be edited; accounts create their own plans instead.',
         },
       ];
     },
@@ -605,8 +601,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
         'defaults to the current UTC month',
       );
 
-      // An old month never had usage rows created (lazy materialization):
-      // zero usage, full allowance, distinct counters per month.
+      // A month with no rows reads as zero usage with the full allowance.
       const previous = await api.getAccountUsage(key, '2026-01');
       expectEq(previous.data.used_units, 0, 'a month with no activity reports zero usage');
 
@@ -627,7 +622,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
         await usageStep({ api, state }, 'GET /v1/users/{alice}/usage?month=2026-01', () =>
           Promise.resolve(userPrevious),
         ),
-        { note: 'Each UTC month is its own counter; previous months stay queryable forever.' },
+        { note: 'Usage is counted per UTC month; earlier months stay queryable.' },
       ];
     },
   },
@@ -639,8 +634,8 @@ const SCENARIO_DEFS: ScenarioDef[] = [
     async run({ api, state }) {
       const { key, alice } = requireSetup(state);
 
-      // Make sure there are at least three ledger rows so pagination has
-      // something to page through (tiny 1-unit fillers; capped).
+      // Add a few 1-unit requests if there aren't enough rows yet to fill
+      // two pages.
       for (let i = 0; i < 3; i++) {
         const probe = await api.listHistory(key, { limit: 2 });
         if (probe.data.items.length >= 2 && probe.data.next_cursor !== null) break;
@@ -689,7 +684,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
           },
         },
         {
-          note: "Keyset pagination: the cursor is the last row's sort key, so concurrent inserts can never make a row skip between pages (unlike OFFSET).",
+          note: "The cursor is the last row's sort key, so rows inserted between page fetches don't shift the pages (OFFSET would skip or repeat rows).",
         },
       ];
     },
@@ -725,7 +720,7 @@ const SCENARIO_DEFS: ScenarioDef[] = [
           response: { plan: aliceAfter.data.plan.name, scope: aliceAfter.data.plan.scope },
         },
         {
-          note: 'Scopes are enforced at assignment: account plans limit the shared pool, user plans limit individuals.',
+          note: 'Assignment checks the scope: account plans limit the shared allowance, user plans limit one user.',
         },
       ];
     },

@@ -18,17 +18,17 @@ import {
 import type { Rules } from '../domain/rules/schemas.js';
 
 // Schema ground rules:
-// - The database enforces what it structurally can: positivity, ownership,
-//   uniqueness, and the "a rejection consumes nothing" ledger shape - so a
+// - The database enforces what it can: positivity, ownership, uniqueness,
+//   and the "a rejection consumes nothing" request shape - so a
 //   service-layer bug cannot silently corrupt accounting.
-// - Monthly usage lives in (owner, month_start) counter rows - the deliberate
-//   denormalization that keeps the consume hot path O(1) instead of SUM-ing
-//   history on every request. Rows appear lazily: no row = zero usage.
+// - Monthly usage lives in (owner, month_start) counter rows, so a consume
+//   reads its numbers in one place instead of SUM-ing history on every
+//   request. No row = zero usage.
 //
 // NOTE on the accounts <-> plans foreign keys: drizzle resolves reference
 // callbacks lazily, and drizzle-kit breaks the cycle by emitting an
 // ALTER TABLE for one side - the generated migration is committed, so
-// this is inspectable (see src/db/migrations).
+// you can see how it was broken (see src/db/migrations).
 
 export const accounts = pgTable('accounts', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -71,8 +71,8 @@ export const apiKeys = pgTable(
     accountId: uuid('account_id')
       .notNull()
       .references(() => accounts.id),
-    // sha-256 hex of the full `um_...` key; the unique index below makes auth an O(1) indexed lookup on the only
-    // thing we store.
+    // sha-256 hex of the full `um_...` key; the unique index below makes
+    // auth one indexed lookup on the only thing we store.
     keyHash: text('key_hash').notNull(),
     // Display prefix (first 12 chars) so logs/UI can hint at a key without
     // storing anything reusable.
@@ -109,9 +109,8 @@ export const accountUsage = pgTable(
       .references(() => accounts.id),
     // First day of the UTC calendar month the usage belongs to ('YYYY-MM-DD').
     monthStart: date('month_start', { mode: 'string' }).notNull(),
-    // bigint because units are unbounded sums; drizzle's number mode is the
-    // single deliberate string->number conversion point (pg returns bigint
-    // as text).
+    // bigint because units are unbounded sums; drizzle's number mode
+    // converts in one place (pg returns bigint as text).
     usedUnits: bigint('used_units', { mode: 'number' }).notNull().default(0),
     // Accepted requests this month, maintained by the same locked update as
     // used_units. Without it, monthly_request_cap would have to COUNT(*) the
@@ -136,8 +135,8 @@ export const userUsage = pgTable(
       .references(() => users.id),
     monthStart: date('month_start', { mode: 'string' }).notNull(),
     usedUnits: bigint('used_units', { mode: 'number' }).notNull().default(0),
-    // Same rationale as account_usage.accepted_requests: O(1) request counts
-    // under the cap rule instead of a per-consume ledger scan.
+    // Same idea as account_usage.accepted_requests: the cap rule reads a
+    // counter instead of scanning the request table on every consume.
     acceptedRequests: bigint('accepted_requests', { mode: 'number' }).notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -149,8 +148,8 @@ export const userUsage = pgTable(
 );
 
 // The request ledger: history, idempotency store, and audit trail in one
-// table. Every consume decision is recorded with the exact rules it was
-// judged under and the exact response body we returned.
+// table. Every consume decision is recorded with the rules it was judged
+// under and the response body we returned.
 export const requests = pgTable(
   'requests',
   {
@@ -166,7 +165,8 @@ export const requests = pgTable(
     units: bigint('units', { mode: 'number' }).notNull(),
     monthStart: date('month_start', { mode: 'string' }).notNull(),
     accepted: boolean('accepted').notNull(),
-    // 0 when rejected - a rejection consumes nothing, enforced structurally.
+    // 0 when rejected - a rejection consumes nothing; the CHECKs below
+    // keep it that way.
     unitsConsumed: bigint('units_consumed', { mode: 'number' }).notNull(),
     rejectionLevel: text('rejection_level'),
     rejectionRule: text('rejection_rule'),
@@ -180,7 +180,7 @@ export const requests = pgTable(
       .references(() => plans.id),
     accountRules: jsonb('account_rules').$type<Rules>().notNull(),
     userRules: jsonb('user_rules').$type<Rules>().notNull(),
-    // The exact response body returned to the caller - verbatim replay source.
+    // The response body returned to the caller - the replay source.
     response: jsonb('response').$type<Record<string, unknown>>().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -192,8 +192,8 @@ export const requests = pgTable(
     index('requests_user_recent_idx').on(t.userId, t.createdAt.desc(), t.id.desc()),
     check('requests_units_positive_ck', sql`${t.units} > 0`),
     check('requests_consumed_nonnegative_ck', sql`${t.unitsConsumed} >= 0`),
-    // Structural ledger invariants: a row is either a clean acceptance or a
-    // fully-formed rejection - never anything in between.
+    // A row is either a clean acceptance or a fully-formed rejection -
+    // never anything in between.
     check(
       'requests_rejection_shape_ck',
       sql`${t.accepted} or (${t.rejectionLevel} is not null and ${t.rejectionRule} is not null and ${t.unitsConsumed} = 0)`,

@@ -190,7 +190,7 @@ describe('plan changes preserve usage and apply to new requests', () => {
     ]);
   });
 
-  it('a plan flip landing mid-storm never corrupts accounting (every request judged by exactly one rule set)', async () => {
+  it('a plan flip landing while requests are in flight never corrupts accounting (every request judged by exactly one rule set)', async () => {
     const { key, accountId } = await bootstrapAccount(agent, 'DocuFlow');
     // Two account plans with distinguishable allowances.
     const tight = await createCustomPlan(agent, key, 'FlipTight', 'account', {
@@ -224,13 +224,13 @@ describe('plan changes preserve usage and apply to new requests', () => {
     // every promise first, putting all 30 requests on the wire before any
     // waiting begins (the original Promise.all shape did this implicitly).
     const fired = storm.map((p) => p.then(() => {}));
-    // The flips must land MID-storm, and that must not depend on machine
-    // speed. A fixed sleep raced the storm's dispatch (observed once under
-    // host load), and flipping both ways within one consume's serialized
-    // section makes every request read the final plan. Instead: flip to
-    // loose only after the first decision is in (the account lock keeps
-    // the other 29 queued behind it), and flip back only after the ledger
-    // PROVES a request was decided under the loose rules.
+    // The flips must land while the requests are in flight, without
+    // depending on machine speed. A fixed sleep raced the burst's dispatch
+    // (observed once under host load), and flipping both ways within one
+    // consume's locked section makes every request read the final plan.
+    // Instead: flip to loose once the first decision is in (the account
+    // lock keeps the other 29 queued behind it), and flip back once a
+    // ledger row shows a request decided under the loose rules.
     await fired[0];
     const flip1 = await patchTo(loose);
     expect(flip1.status).toBe(200);

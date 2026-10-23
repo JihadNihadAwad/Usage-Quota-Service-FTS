@@ -20,8 +20,8 @@ export interface LevelContext {
 
 /**
  * The consume decision. Acceptance consumes the full amount (all-or-nothing).
- * A rejection consumes nothing - structurally: the rejected branch does not
- * carry a `unitsConsumed` field at all.
+ * A rejection consumes nothing: the rejected variant has no `unitsConsumed`
+ * field at all.
  */
 export type Decision =
   | { accepted: true; units: number; unitsConsumed: number }

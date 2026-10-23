@@ -35,7 +35,7 @@ export function createApp({ pool = getPool() }: AppDeps = {}) {
     res.status(200).json({ status: 'ok' });
   });
 
-  // Readiness: the process AND its one dependency are usable.
+  // Readiness: the process and its database are both usable.
   app.get('/readyz', async (_req, res) => {
     try {
       await pool.query('SELECT 1');

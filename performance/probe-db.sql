@@ -8,6 +8,10 @@
 --
 -- Compare with probe-cost.cjs run inside the api container: the delta is
 -- the socket/network + driver share of the consume path.
+--
+-- month_start is pinned to the 2026-10 evidence run, and the charges stay
+-- (the invariant checker tolerates them; probe-cost.cjs is the variant
+-- that undoes its own).
 
 begin;
 select u.plan_id, p.rules as user_rules from users u join plans p on p.id = u.plan_id where u.id = 'd9338d00-2d6c-43c7-a727-1ae8dc1ae8c8' and u.account_id = '1e43d8c1-b037-4642-bc4f-692db9213684';

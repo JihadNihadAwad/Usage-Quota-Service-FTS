@@ -4,12 +4,12 @@ import { deepStrictEqual } from 'node:assert';
 // Accounts, users, plans, assignments, usage, and request history live in
 // the database, so they survive a restart.
 //
-// This probe runs against the DOCKER COMPOSE stack (localhost:3000 - the
+// This script runs against the docker compose stack (localhost:3000 - the
 // same stack `docker compose up --build` provides), not the test db.
-// It restarts ONLY the api container, mid-flight, and proves:
+// It restarts only the api container and checks:
 //   - the data written before the restart is still there afterwards
-//   - a retry of the same request_id after the restart replays the stored
-//     decision verbatim and is not charged again
+//   - a retry of the same request_id after the restart returns the stored
+//     decision and is not charged again
 //
 // Run: npm run test:persistence   (stack must be up: docker compose up -d --wait)
 
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
   expectEq((consumed.body as { accepted: boolean }).accepted, true, 'consume accepted');
   console.log(`[persistence] wrote: account ${accountId}, user, request ${request_id} (7 units)`);
 
-  // 2. Kill the api container mid-flight (the db keeps running).
+  // 2. Restart the api container (the db keeps running).
   console.log('[persistence] restarting the api container…');
   execFileSync('docker', ['compose', 'restart', 'api'], { stdio: 'inherit' });
   await waitForApi();

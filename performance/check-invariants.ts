@@ -1,10 +1,10 @@
-// Post-stage invariant check - run after EVERY k6 stage:
+// Post-stage invariant check - run after every k6 stage:
 //
 //   npm run bench:invariants
 //
 // Runs inside the api container (node type-strips .ts natively) and talks
 // to the compose db over its network - no host-published db port needed.
-// It asserts, for EVERY loadtest account and the current UTC month:
+// It asserts, for every loadtest account and the current UTC month:
 //   1. account counter == sum of user counters == sum of accepted ledger units
 //   2. every rejected ledger row consumed nothing
 //   3. no counter ever exceeded its plan allowance

@@ -144,7 +144,7 @@ describe('history pagination (keyset)', () => {
     const cursor = page1.next_cursor as string;
     const page2Before = await getJson(`/v1/history?limit=2&cursor=${cursor}`, key);
 
-    // A NEWEST row lands between page fetches - keyset cursors are immune.
+    // A newer row lands between page fetches - keyset cursors are unaffected.
     await agent
       .post('/v1/consume')
       .set('Authorization', `Bearer ${key}`)
@@ -153,7 +153,7 @@ describe('history pagination (keyset)', () => {
 
     const page2After = await getJson(`/v1/history?limit=2&cursor=${cursor}`, key);
     expect(page2After.items).toEqual(page2Before.items);
-    // And the new row is where it belongs: at the very top of page 1.
+    // The new row shows up at the top of page 1.
     const freshPage1 = await getJson('/v1/history?limit=2', key);
     expect(freshPage1.items[0].request_id).toBe('s-newest');
   });

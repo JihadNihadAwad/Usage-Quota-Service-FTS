@@ -16,6 +16,15 @@ EventEmitter.defaultMaxListeners = 100;
 export type Agent = ReturnType<typeof request>;
 export type TestDb = NodePgDatabase<typeof schema>;
 
+// A .env in the repo root, when present, supplies TEST_DATABASE_URL (the
+// default below is the compose db-test); variables already in the
+// environment win, and a missing file is the normal case.
+try {
+  process.loadEnvFile();
+} catch (err) {
+  if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+}
+
 // The integration database is the compose `test` profile (port 5433, database
 // fts_test) - never the dev database on 5432.
 export const TEST_DATABASE_URL =

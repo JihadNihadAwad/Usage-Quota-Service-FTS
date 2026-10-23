@@ -12,6 +12,15 @@ import { UsageApi } from './core/api.js';
 import { SCENARIO_COUNT, runScenario, scenarioCatalog } from './core/scenarios.js';
 import { freshState, type DemoState } from './core/state.js';
 
+// A ./.env, when present, supplies CLIENT_PORT/USAGE_API_URL here (host dev
+// flow; the container gets them from compose). A missing file is the normal
+// case, and variables already in the environment win over it.
+try {
+  process.loadEnvFile();
+} catch (err) {
+  if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+}
+
 const PORT = Number(process.env.CLIENT_PORT ?? 3001);
 const USAGE_API_URL = process.env.USAGE_API_URL ?? 'http://localhost:3000/v1';
 
@@ -70,7 +79,8 @@ app.get('/api/state', async (_req, res) => {
       plans: plans.data.items,
     });
   } catch (err) {
-    // The API being down should not break the demo page - show stale-less state.
+    // The API being down should not break the demo page; the panel reports
+    // the error instead of live numbers.
     res.json({
       setup: state.apiKey !== null,
       runId: state.runId,

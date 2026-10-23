@@ -19,5 +19,15 @@ const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 export function loadEnv(): Env {
+  // A .env next to the package.json, when present, supplies the variables
+  // below (the host dev flow - containers get theirs from compose).
+  // Variables already in the environment win over the file; a missing
+  // file is the normal case, anything else is a file that cannot be read
+  // and should stop boot.
+  try {
+    process.loadEnvFile();
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+  }
   return EnvSchema.parse(process.env);
 }

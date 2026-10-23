@@ -6,6 +6,14 @@ import { UsageApi } from './core/api.js';
 import { scenarioCatalog, runScenario, type ScenarioCategory } from './core/scenarios.js';
 import { freshState } from './core/state.js';
 
+// A ./.env, when present, supplies USAGE_API_URL here; a missing file is
+// the normal case and variables already in the environment win over it.
+try {
+  process.loadEnvFile();
+} catch (err) {
+  if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+}
+
 const USAGE_API_URL = process.env.USAGE_API_URL ?? 'http://localhost:3000/v1';
 
 const api = new UsageApi(USAGE_API_URL);
